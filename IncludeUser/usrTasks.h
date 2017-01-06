@@ -10,7 +10,7 @@
 
 #include "lcdLogger.h"
 //#include "ethernetLib.h"
-//#include "audioRecording.h"
+#include "audioRecording.h"
 //#include "soundProcessing.h"
 //#include "lcdAmplitudePrinter.h"
 //#include "ethernetLib.h"

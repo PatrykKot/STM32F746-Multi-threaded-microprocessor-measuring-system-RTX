@@ -25,13 +25,13 @@
  * @var SoundBuffer* mainSoundBuffer
  * @brief Cyclic buffer which holds audio samples
  */
-//SoundBufferStr* mainSoundBuffer;
+SoundBufferStr* mainSoundBuffer;
 
 /**
  * @var uint16_t dmaAudioBuffer[AUDIO_BUFFER_SIZE]
  * @brief Buffer which holds samples from last DMA interrupt
  */
-//uint16_t dmaAudioBuffer[AUDIO_BUFFER_SIZE];
+uint16_t dmaAudioBuffer[AUDIO_BUFFER_SIZE];
 
 /**
  * @var AmplitudeStr* mainSpectrumBuffer
@@ -70,8 +70,8 @@ osThreadDef(soundProcessingTask, osPriorityHigh, 1,
 		0);
 
 /* Memory pool handlers */
-//osPoolDef(soundBufferPool, 1, SoundBufferStr);
-//osPoolId soundBufferPool_id;
+osPoolDef(soundBufferPool, 1, SoundBufferStr);
+osPoolId soundBufferPool_id;
 //osPoolDef(spectrumBufferPool, 2, SpectrumStr);
 //osPoolId spectrumBufferPool_id;
 //osPoolDef(cfftPool, 1, arm_cfft_instance_f32);
@@ -80,12 +80,9 @@ osThreadDef(soundProcessingTask, osPriorityHigh, 1,
 //		float32_t[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE]);
 //osPoolId soundProcessingBufferPool_id;
 
-//osPoolDef(stmConfigPool, 1, StmConfig);
-//osPoolId stmConfigPool_id;
-
 /* Mail queue handler */
-//osMailQDef(dmaAudioMail_q, MAXIMUM_DMA_AUDIO_MESSAGE_QUEUE_SIZE, SoundMailStr);
-//osMailQId dmaAudioMail_q_id;
+osMailQDef(dmaAudioMail_q, MAXIMUM_DMA_AUDIO_MESSAGE_QUEUE_SIZE, SoundMailStr);
+osMailQId dmaAudioMail_q_id;
 
 /* Mutex handlers */
 //osMutexDef(mainSpectrumBufferMutex);
@@ -150,12 +147,12 @@ void initTask(void const * argument) {
 		printNullHandle("Sound pool");*/
 
 	logMsg("Initializing mail queues");
-	/*dmaAudioMail_q_id = osMailCreate(osMailQ(dmaAudioMail_q), NULL);
-	if (dmaAudioMail_q_id == NULL)
-		printNullHandle("Audio mail q");
+	dmaAudioMail_q_id = osMailCreate(osMailQ(dmaAudioMail_q), NULL);
+	/*if (dmaAudioMail_q_id == NULL)
+		printNullHandle("Audio mail q");*/
 
 	logMsg("Initializing mutexes");
-	mainSpectrumBufferMutex_id = osMutexCreate(
+	/*mainSpectrumBufferMutex_id = osMutexCreate(
 			osMutex(mainSpectrumBufferMutex));
 	if (mainSpectrumBufferMutex_id == NULL)
 		printNullHandle("Spect mut");
@@ -183,19 +180,6 @@ void initTask(void const * argument) {
 	configStr.clientPort = UDP_STREAMING_PORT;
 	IP4_ADDR(&configStr.clientIp, 192, 168, 1, 10);*/
 
-	logMsg("Preparing audio recording");
-	/*if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE,
-	AUDIO_RECORDER_VOLUME_0DB,
-			configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
-		logErr("Audio rec init");
-	}*/
-
-	/* Audio recorder - start recording */
-	/*if (audioRecorderStartRecording(dmaAudioBuffer,
-	AUDIO_BUFFER_SIZE) != AUDIO_RECORDER_OK) {
-		logErr("Audio buffer start");
-	}*/
-
 	logMsg("Initializing tasks");
 #ifdef LCD_PRINTER_SUPPORT
 	lcdTaskHandle = osThreadCreate(osThread(lcdTask), NULL);
@@ -216,6 +200,20 @@ void initTask(void const * argument) {
 	/*if (httpConfigTaskHandle == NULL)
 		printNullHandle("HTTP task");*/
 
+	logMsg("Preparing audio recording");
+	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE,
+	AUDIO_RECORDER_VOLUME_0DB,
+			//configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
+			44100) != AUDIO_RECORDER_OK) {
+	logErr("Audio rec init");
+	}
+
+	/* Audio recorder - start recording */
+	if (audioRecorderStartRecording(dmaAudioBuffer,
+	AUDIO_BUFFER_SIZE) != AUDIO_RECORDER_OK) {
+		logErr("Audio buffer start");
+	}
+	
 	logMsg("Terminating init");
 	osThreadTerminate(initTaskHandle);
 }
@@ -315,36 +313,45 @@ void dhcpTask(void const * argument) {
 		osDelay(osWaitForever);
 }
 
+void BSP_AUDIO_IN_Error_CallBack(void) {
+	logMsg("Error callback");
+}
+
 /**
  * @brief Functions called as DMA interrupt
  */
 void audioRecorder_FullBufferFilled(void) {
-	/*SoundMailStr *soundSamples;
+	SoundMailStr *soundSamples;
 
 	// allocating memory for sound mail
 	soundSamples = osMailAlloc(dmaAudioMail_q_id, osWaitForever);
 	audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer,
-	AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
+	//AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
+	AUDIO_BUFFER_SIZE, 44100);
 
 	// sending mail to queue
-	osStatus status = osMailPut(dmaAudioMail_q_id, soundSamples);
-	if (status != osOK)
-		logErrVal("Audio mail send", status);*/
+  osMailPut(dmaAudioMail_q_id, soundSamples);
 }
 
 /**
  * @brief Asynchronous task which gets audio mails from queue and fills the mainSoundBuffer
  */
 void samplingTask(void const * argument) {
-	/*while (1) {
+	osStatus status;
+	osEvent event;
+	SoundMailStr *receivedSound;
+	while (1) {
 		// waiting for new mail
-		osEvent event = osMailGet(dmaAudioMail_q_id, osWaitForever);
+		logMsg("Waiting");
+		event = osMailGet(dmaAudioMail_q_id, osWaitForever);
+		logMsg("After");
 		if (event.status == osEventMail) {
-			SoundMailStr *receivedSound = (SoundMailStr *) event.value.p;
+			receivedSound = (SoundMailStr *) event.value.p;
+			
+			logMsg("Mail");
 
 			// waiting for access to mailSoundBuffer
-			osStatus status = osMutexWait(mainSoundBufferMutex_id,
-			osWaitForever);
+			/*osStatus status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
 				// filling cyclic buffer
 				audioRecordingUpdateSoundBuffer(mainSoundBuffer, receivedSound);
@@ -356,7 +363,7 @@ void samplingTask(void const * argument) {
 				}
 			} else {
 				logErr("Sampling mutex");
-			}
+			}*/
 
 			// free audio mail memory
 			status = osMailFree(dmaAudioMail_q_id, receivedSound);
@@ -364,7 +371,7 @@ void samplingTask(void const * argument) {
 				logErrVal("Sound mail free", status);
 			}
 		}
-	}*/
+	}
 }
 
 /**
