@@ -200,7 +200,7 @@
         <SetRegEntry>
           <Number>0</Number>
           <Key>DLGTARM</Key>
-          <Name>(1010=472,107,937,663,0)(6017=-1,-1,-1,-1,0)(1008=-1,-1,-1,-1,0)(6016=743,6,1001,658,0)(1012=-1,-1,-1,-1,0)</Name>
+          <Name>(1010=472,107,937,663,0)(6017=-1,-1,-1,-1,0)(1008=-1,-1,-1,-1,0)(6016=775,61,1033,713,0)(1012=-1,-1,-1,-1,0)</Name>
         </SetRegEntry>
         <SetRegEntry>
           <Number>0</Number>
@@ -605,7 +605,7 @@
 
   <Group>
     <GroupName>::CMSIS</GroupName>
-    <tvExp>0</tvExp>
+    <tvExp>1</tvExp>
     <tvExpOptDlg>0</tvExpOptDlg>
     <cbSel>0</cbSel>
     <RteFlg>1</RteFlg>

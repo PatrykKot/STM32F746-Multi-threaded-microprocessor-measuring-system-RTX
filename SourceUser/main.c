@@ -20,9 +20,13 @@ int main(void) {
 	/* Setting the system clock */
 	SystemClock_Config();
 
+	osKernelInitialize();
 	threadsInit();
+	
 	osKernelStart();
 
 	while (1)
-		;
+	{
+		osThreadYield ();
+	}
 }

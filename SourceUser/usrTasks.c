@@ -186,17 +186,16 @@ void initTask(void const * argument) {
 	if (lcdTaskHandle == NULL)
 	printNullHandle("Lcd task");
 #endif
-	soundProcessingTaskHandle = osThreadCreate(osThread(soundProcessingTask),
-	NULL);
+	//soundProcessingTaskHandle = osThreadCreate(osThread(soundProcessingTask), NULL);
 	/*if (soundProcessingTaskHandle == NULL)
 		printNullHandle("Sound proc task");*/
 	samplingTaskHandle = osThreadCreate(osThread(samplingTask), NULL);
 	/*if (samplingTaskHandle == NULL)
 		printNullHandle("Samp task");*/
-	streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
+	//streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
 	/*if (streamingTaskHandle == NULL)
 		printNullHandle("Stream task");*/
-	httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
+	//httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
 	/*if (httpConfigTaskHandle == NULL)
 		printNullHandle("HTTP task");*/
 
@@ -326,15 +325,23 @@ void audioRecorder_FullBufferFilled(void) {
 	
 	// allocating memory for sound mail
 	soundSamples = osMailAlloc(dmaAudioMail_q_id, 0);
-	audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer,
-	//AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
-	AUDIO_BUFFER_SIZE, 44100);
-
-	// sending mail to queue
-  mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
-	if(mailStatus != osOK)
+	
+	if(soundSamples == NULL)
 	{
-		logErrVal("DMA irq ", mailStatus);
+		logErr("Null sound samples");
+	}
+	else
+	{
+		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer,
+		//AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
+		AUDIO_BUFFER_SIZE, 44100);
+
+		// sending mail to queue
+		mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
+		if(mailStatus != osOK)
+		{
+			logErrVal("DMA irq ", mailStatus);
+		}
 	}
 }
 
@@ -348,10 +355,11 @@ void samplingTask(void const * argument) {
 	
 	while (1) {
 		// waiting for new mail
+		osThreadYield();
 		event = osMailGet(dmaAudioMail_q_id, osWaitForever);
 		if (event.status == osEventMail) {
 			receivedSound = (SoundMailStr *) event.value.p;
-
+		
 			// waiting for access to mailSoundBuffer
 			/*osStatus status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
