@@ -11,7 +11,7 @@
 #include "lcdLogger.h"
 //#include "ethernetLib.h"
 #include "audioRecording.h"
-//#include "soundProcessing.h"
+#include "soundProcessing.h"
 //#include "lcdAmplitudePrinter.h"
 //#include "ethernetLib.h"
 //#include "mcuConfig.h"

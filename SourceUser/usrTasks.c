@@ -37,7 +37,7 @@ uint16_t dmaAudioBuffer[AUDIO_BUFFER_SIZE];
  * @var AmplitudeStr* mainSpectrumBuffer
  * @brief Buffer which holds spectrum samples
  */
-//SpectrumStr* mainSpectrumBuffer;
+SpectrumStr* mainSpectrumBuffer;
 
 /* Task handlers */
 osThreadId initTaskHandle;
@@ -67,32 +67,32 @@ osThreadDef(dhcpTask, osPriorityNormal, 1,
 
 osThreadId soundProcessingTaskHandle;
 osThreadDef(soundProcessingTask, osPriorityHigh, 1,
-		MINIMAL_STACK_SIZE);
+		10*MINIMAL_STACK_SIZE);
 
 /* Memory pool handlers */
 osPoolDef(soundBufferPool, 1, SoundBufferStr);
 osPoolId soundBufferPool_id;
-//osPoolDef(spectrumBufferPool, 2, SpectrumStr);
-//osPoolId spectrumBufferPool_id;
-//osPoolDef(cfftPool, 1, arm_cfft_instance_f32);
-//osPoolId cfftPool_id;
-//osPoolDef(soundProcessingBufferPool, 1,
-//		float32_t[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE]);
-//osPoolId soundProcessingBufferPool_id;
+osPoolDef(spectrumBufferPool, 2, SpectrumStr);
+osPoolId spectrumBufferPool_id;
+osPoolDef(cfftPool, 1, arm_cfft_instance_f32);
+osPoolId cfftPool_id;
+osPoolDef(soundProcessingBufferPool, 1,
+		float32_t[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE]);
+osPoolId soundProcessingBufferPool_id;
 
 /* Mail queue handler */
 osMailQDef(dmaAudioMail_q, MAXIMUM_DMA_AUDIO_MESSAGE_QUEUE_SIZE, SoundMailStr);
 osMailQId dmaAudioMail_q_id;
 
 /* Mutex handlers */
-//osMutexDef(mainSpectrumBufferMutex);
-//osMutexId mainSpectrumBufferMutex_id;
+osMutexDef(mainSpectrumBufferMutex);
+osMutexId mainSpectrumBufferMutex_id;
 
 //osMutexDef(ethernetInterfaceMutex);
 //osMutexId ethernetInterfaceMutex_id;
 
-//osMutexDef(mainSoundBufferMutex);
-//osMutexId mainSoundBufferMutex_id;
+osMutexDef(mainSoundBufferMutex);
+osMutexId mainSoundBufferMutex_id;
 
 // FUNCTIONS
 
@@ -113,6 +113,7 @@ void threadsInit() {
 void initTask(void const * argument) {
 	/* PERIPHERALS INITIALIZATION */
 	osEvent event;
+	uint32_t i;
 	
 	lcdInit();
 	logMsg("Init task");
@@ -136,14 +137,14 @@ void initTask(void const * argument) {
 
 	/* Taska, mutexes, mail queues and memory pools initialization */
 	logMsg("Initializing memory pools");
-	/*spectrumBufferPool_id = osPoolCreate(osPool(spectrumBufferPool));
-	if (spectrumBufferPool_id == NULL)
-		printNullHandle("Spect pool");
+	spectrumBufferPool_id = osPoolCreate(osPool(spectrumBufferPool));
+	/*if (spectrumBufferPool_id == NULL)
+		printNullHandle("Spect pool");*/
 	cfftPool_id = osPoolCreate(osPool(cfftPool));
-	if (cfftPool_id == NULL)
-		printNullHandle("Cfft pool");
+	/*if (cfftPool_id == NULL)
+		printNullHandle("Cfft pool");*/
 	soundBufferPool_id = osPoolCreate(osPool(soundBufferPool));
-	if (soundBufferPool_id == NULL)
+	/*if (soundBufferPool_id == NULL)
 		printNullHandle("Sound pool");*/
 
 	logMsg("Initializing mail queues");
@@ -152,12 +153,12 @@ void initTask(void const * argument) {
 		printNullHandle("Audio mail q");*/
 
 	logMsg("Initializing mutexes");
-	/*mainSpectrumBufferMutex_id = osMutexCreate(
+	mainSpectrumBufferMutex_id = osMutexCreate(
 			osMutex(mainSpectrumBufferMutex));
-	if (mainSpectrumBufferMutex_id == NULL)
-		printNullHandle("Spect mut");
+	/*if (mainSpectrumBufferMutex_id == NULL)
+		printNullHandle("Spect mut");*/
 	mainSoundBufferMutex_id = osMutexCreate(osMutex(mainSoundBufferMutex));
-	if (mainSoundBufferMutex_id == NULL)
+	/*if (mainSoundBufferMutex_id == NULL)
 		printNullHandle("Audio mut");
 	ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
 	if (ethernetInterfaceMutex_id == NULL)
@@ -166,14 +167,15 @@ void initTask(void const * argument) {
 	/* Global variables */
 	logMsg("Preparing global variables");
 	//configStr = osPoolCAlloc(stmConfigPool_id);
-	/*mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
+	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
 	mainSoundBuffer->iterator = 0;
-	mainSoundBuffer->frequency = configStr.audioSamplingFrequency;
+	//mainSoundBuffer->frequency = configStr.audioSamplingFrequency;
+	mainSoundBuffer->frequency = 44100;
 	mainSoundBuffer->size = MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE;
-	for (uint32_t i = 0; i < mainSoundBuffer->size; i++) {
+	for (i = 0; i < mainSoundBuffer->size; i++) {
 		mainSoundBuffer->soundBuffer[i] = 0;
-	}*/
+	}
 
 	/*configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
 	configStr.audioSamplingFrequency = 44100;
@@ -186,7 +188,7 @@ void initTask(void const * argument) {
 	if (lcdTaskHandle == NULL)
 	printNullHandle("Lcd task");
 #endif
-	//soundProcessingTaskHandle = osThreadCreate(osThread(soundProcessingTask), NULL);
+	soundProcessingTaskHandle = osThreadCreate(osThread(soundProcessingTask), NULL);
 	/*if (soundProcessingTaskHandle == NULL)
 		printNullHandle("Sound proc task");*/
 	samplingTaskHandle = osThreadCreate(osThread(samplingTask), NULL);
@@ -360,8 +362,9 @@ void samplingTask(void const * argument) {
 		if (event.status == osEventMail) {
 			receivedSound = (SoundMailStr *) event.value.p;
 		
+			logMsg("Sampling");
 			// waiting for access to mailSoundBuffer
-			/*osStatus status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
+			status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
 				// filling cyclic buffer
 				audioRecordingUpdateSoundBuffer(mainSoundBuffer, receivedSound);
@@ -373,7 +376,7 @@ void samplingTask(void const * argument) {
 				}
 			} else {
 				logErr("Sampling mutex");
-			}*/
+			}
 
 			// free audio mail memory
 			status = osMailFree(dmaAudioMail_q_id, receivedSound);
@@ -388,7 +391,7 @@ void samplingTask(void const * argument) {
  * @brief FFT processing task
  */
 void soundProcessingTask(void const * argument) {
-	/*SpectrumStr* temporarySpectrumBufferStr;
+	SpectrumStr* temporarySpectrumBufferStr;
 	arm_cfft_instance_f32* cfftInstance;
 	osStatus status;
 	osEvent event;
@@ -398,15 +401,18 @@ void soundProcessingTask(void const * argument) {
 	cfftInstance = osPoolCAlloc(cfftPool_id);
 
 	while (1) {
+		osDelay(100);
+		logMsg("Sound processing");
+		
 		// waiting for start signal
-		event = osSignalWait(START_SOUND_PROCESSING_SIGNAL, osWaitForever);
+		//event = osSignalWait(START_SOUND_PROCESSING_SIGNAL, osWaitForever);
 
-		if (event.status == osEventSignal) {
+		//if (event.status == osEventSignal) {
 
 			// waiting for access to main sound buffer
 			status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
-
+/*
 				// getting FFT instance
 				soundProcessingGetCfftInstance(cfftInstance,
 						mainSoundBuffer->size / 2);
@@ -449,20 +455,20 @@ void soundProcessingTask(void const * argument) {
 
 				} else {
 					logErr("Cfft NULL");
-
+*/
 					// releasing main sound buffer mutex
 					status = osMutexRelease(mainSoundBufferMutex_id);
 					if (status != osOK) {
 						logErrVal("Sampling mutex (sound processing) release",
 								status);
 					}
-				}
+	//			}
 			} else {
 				logErr("Sampling mutex (sound processing)");
 			}
-		} else
-			logErrVal("ST sp wait", event.status);
-	}*/
+		//} else
+		//	logErrVal("ST sp wait", event.status);
+	}
 }
 
 #ifdef LCD_PRINTER_SUPPORT
