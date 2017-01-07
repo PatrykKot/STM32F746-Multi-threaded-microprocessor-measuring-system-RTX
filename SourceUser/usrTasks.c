@@ -322,15 +322,20 @@ void BSP_AUDIO_IN_Error_CallBack(void) {
  */
 void audioRecorder_FullBufferFilled(void) {
 	SoundMailStr *soundSamples;
-
+	osStatus mailStatus;
+	
 	// allocating memory for sound mail
-	soundSamples = osMailAlloc(dmaAudioMail_q_id, osWaitForever);
+	soundSamples = osMailAlloc(dmaAudioMail_q_id, 0);
 	audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer,
 	//AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
 	AUDIO_BUFFER_SIZE, 44100);
 
 	// sending mail to queue
-  osMailPut(dmaAudioMail_q_id, soundSamples);
+  mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
+	if(mailStatus != osOK)
+	{
+		logErrVal("DMA irq ", mailStatus);
+	}
 }
 
 /**
@@ -340,15 +345,12 @@ void samplingTask(void const * argument) {
 	osStatus status;
 	osEvent event;
 	SoundMailStr *receivedSound;
+	
 	while (1) {
 		// waiting for new mail
-		logMsg("Waiting");
 		event = osMailGet(dmaAudioMail_q_id, osWaitForever);
-		logMsg("After");
 		if (event.status == osEventMail) {
 			receivedSound = (SoundMailStr *) event.value.p;
-			
-			logMsg("Mail");
 
 			// waiting for access to mailSoundBuffer
 			/*osStatus status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
