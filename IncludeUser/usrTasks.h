@@ -58,4 +58,6 @@ void initTask(void const * argument);
 #define DHCP_FINISHED_SIGNAL 0x0001
 #define START_SOUND_PROCESSING_SIGNAL 0x0001
 
+#define MINIMAL_STACK_SIZE 128
+
 #endif /* USRTASKS_H_ */

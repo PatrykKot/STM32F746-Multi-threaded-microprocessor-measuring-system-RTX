@@ -42,32 +42,32 @@ uint16_t dmaAudioBuffer[AUDIO_BUFFER_SIZE];
 /* Task handlers */
 osThreadId initTaskHandle;
 osThreadDef(initTask, osPriorityNormal, 1,
-		0);
-
+		3*MINIMAL_STACK_SIZE);
+		
 #ifdef LCD_PRINTER_SUPPORT
 osThreadId lcdTaskHandle;
-osThreadDef(lcdThread, lcdTask, osPriorityNormal, 1, 0);
+osThreadDef(lcdTask, osPriorityNormal, 1, MINIMAL_STACK_SIZE);
 #endif
 
 osThreadId samplingTaskHandle;
 osThreadDef(samplingTask, osPriorityRealtime, 1,
-		0);
+		2*MINIMAL_STACK_SIZE);
 
 osThreadId streamingTaskHandle;
 osThreadDef(streamingTask, osPriorityRealtime, 1,
-		0);
+		5*MINIMAL_STACK_SIZE);
 
 osThreadId httpConfigTaskHandle;
 osThreadDef(httpConfigTask, osPriorityHigh, 1,
-		0);
+		12*MINIMAL_STACK_SIZE);
 
 osThreadId dhcpInitTaskHandle;
 osThreadDef(dhcpTask, osPriorityNormal, 1,
-		0);
+		5*MINIMAL_STACK_SIZE);
 
 osThreadId soundProcessingTaskHandle;
 osThreadDef(soundProcessingTask, osPriorityHigh, 1,
-		0);
+		MINIMAL_STACK_SIZE);
 
 /* Memory pool handlers */
 osPoolDef(soundBufferPool, 1, SoundBufferStr);
