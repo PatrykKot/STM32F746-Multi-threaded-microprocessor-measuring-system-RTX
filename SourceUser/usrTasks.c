@@ -67,7 +67,7 @@ osThreadDef(dhcpTask, osPriorityNormal, 1,
 
 osThreadId soundProcessingTaskHandle;
 osThreadDef(soundProcessingTask, osPriorityHigh, 1,
-		10*MINIMAL_STACK_SIZE);
+		195*MINIMAL_STACK_SIZE);
 
 /* Memory pool handlers */
 osPoolDef(soundBufferPool, 1, SoundBufferStr);
@@ -330,7 +330,7 @@ void audioRecorder_FullBufferFilled(void) {
 	
 	if(soundSamples == NULL)
 	{
-		logErr("Null sound samples");
+		//logErr("Null sound samples");
 	}
 	else
 	{
@@ -395,6 +395,7 @@ void soundProcessingTask(void const * argument) {
 	arm_cfft_instance_f32* cfftInstance;
 	osStatus status;
 	osEvent event;
+	float32_t temporaryAudioBuffer[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE];
 
 	// allocating memory for temporary spectrum buffer
 	temporarySpectrumBufferStr = osPoolCAlloc(spectrumBufferPool_id);
@@ -412,13 +413,12 @@ void soundProcessingTask(void const * argument) {
 			// waiting for access to main sound buffer
 			status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
-/*
+
 				// getting FFT instance
 				soundProcessingGetCfftInstance(cfftInstance,
 						mainSoundBuffer->size / 2);
 
 				if (cfftInstance != NULL) {
-					float32_t temporaryAudioBuffer[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE];
 
 					// spectrum buffer initialization and sound buffer copying
 					soundProcessingAmplitudeInit(temporarySpectrumBufferStr,
@@ -455,14 +455,14 @@ void soundProcessingTask(void const * argument) {
 
 				} else {
 					logErr("Cfft NULL");
-*/
+
 					// releasing main sound buffer mutex
 					status = osMutexRelease(mainSoundBufferMutex_id);
 					if (status != osOK) {
 						logErrVal("Sampling mutex (sound processing) release",
 								status);
 					}
-	//			}
+				}
 			} else {
 				logErr("Sampling mutex (sound processing)");
 			}
