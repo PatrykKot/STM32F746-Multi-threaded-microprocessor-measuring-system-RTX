@@ -283,7 +283,7 @@
 /* Section 2: PHY configuration section */
 
 /* DP83848 PHY Address*/ 
-#define DP83848_PHY_ADDRESS             0x01U
+#define LAN8742A_PHY_ADDRESS            0x00U
 /* PHY Reset delay these values are based on a 1 ms Systick interrupt*/ 
 #define PHY_RESET_DELAY                 0x000000FFU
 /* PHY Configuration delay */
@@ -534,7 +534,6 @@
 #else
   #define assert_param(expr) ((void)0)
 #endif /* USE_FULL_ASSERT */
-
 
 #ifdef __cplusplus
 }
