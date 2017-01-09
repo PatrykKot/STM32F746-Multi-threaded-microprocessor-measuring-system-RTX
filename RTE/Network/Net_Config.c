@@ -15,16 +15,17 @@
 //   <i>This is the name under which embedded host can be
 //   <i>accessed on a local area network.
 //   <i>Default: "my_host"
-#define NET_HOST_NAME           "stm32f7-disco"
+#define NET_HOST_NAME           "STM32_Project"
 
 //   <o>Memory Pool size <1536-262144:4><#/4>
 //   <i>This is the size of a memory pool in bytes. Buffers for
 //   <i>Network packets are allocated from this memory pool.
 //   <i>Default: 12000 bytes
-#define NET_MEM_SIZE            3000
+#define NET_MEM_SIZE            5000
 
 // </h>
 
+#include "lcdLogger.h"
 #include "RTE_Components.h"
 
 #ifdef  RTE_Network_Interface_ETH_0
@@ -105,31 +106,38 @@ void net_sys_error (ERROR_CODE error) {
 
   switch (error) {
     case ERR_MEM_ALLOC:
+			logErr("Eth ERR_MEM_ALLOC");
       /* Out of memory */
       break;
 
     case ERR_MEM_FREE:
+			logErr("Eth ERR_MEM_FREE");
       /* Trying to release non existing memory block */
       break;
 
     case ERR_MEM_CORRUPT:
+			logErr("Eth ERR_MEM_CORRUPT");
       /* Memory Link pointer Corrupted */
       /* More data written than the size of allocated mem block */
       break;
 
     case ERR_MEM_LOCK:
+			logErr("Eth ERR_MEM_LOCK");
       /* Locked Memory management function (alloc/free) re-entered */
       break;
 
     case ERR_UDP_ALLOC:
+			logErr("Eth ERR_UDP_ALLOC");
       /* Out of UDP Sockets */
       break;
 
     case ERR_TCP_ALLOC:
+			logErr("Eth ERR_TCP_ALLOC");
       /* Out of TCP Sockets */
       break;
 
     case ERR_TCP_STATE:
+			logErr("Eth ERR_TCP_STATE");
       /* TCP State machine in undefined state */
       break;
   }

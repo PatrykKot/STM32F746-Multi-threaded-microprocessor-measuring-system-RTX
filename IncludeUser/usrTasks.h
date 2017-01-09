@@ -9,18 +9,15 @@
 #define USRTASKS_H_
 
 #include "lcdLogger.h"
-//#include "ethernetLib.h"
 #include "audioRecording.h"
 #include "soundProcessing.h"
 //#include "lcdAmplitudePrinter.h"
-//#include "ethernetLib.h"
-//#include "mcuConfig.h"
-//#include "jsonConfiguration.h"
+#include "ethernetLib.h"
+#include "jsonConfiguration.h"
 
-//#include "usrTaskSupport.h"
+#include "usrTaskSupport.h"
 
 #include "cmsis_os.h"
-//#include "lwip.h"
 
 /* Functions */
 void threadsInit(void);
@@ -32,7 +29,7 @@ void lcdTask(void const * argument);
 
 void soundProcessingTask(void const * argument);
 void samplingTask(void const * argument);
-void dhcpTask(void const * argument);
+void ethernetTask(void const * argument);
 void streamingTask(void const * argument);
 void httpConfigTask(void const * argument);
 void initTask(void const * argument);
@@ -55,7 +52,7 @@ void initTask(void const * argument);
 #define MAXIMUM_DMA_AUDIO_MESSAGE_QUEUE_SIZE 8
 
 /* Signals */
-#define DHCP_FINISHED_SIGNAL 0x0001
+#define ETHERNET_FINISHED_SIGNAL 0x0001
 #define START_SOUND_PROCESSING_SIGNAL 0x0001
 
 #define MINIMAL_STACK_SIZE 128

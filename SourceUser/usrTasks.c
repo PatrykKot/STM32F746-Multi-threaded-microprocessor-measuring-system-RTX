@@ -7,18 +7,6 @@
 
 #include "usrTasks.h"
 
-/**
- * @var uint8_t dhcpState
- * @brief State of DHCP client
- */
-//extern uint8_t dhcpState;
-
-/**
- * @var netif ethernetInterfaceHandler
- * @brief Ethernet interface handler (used for DHCP searching, UDP and TCO communication)
- */
-//extern struct netif ethernetInterfaceHandler;
-
 //StmConfig configStr;
 
 /**
@@ -61,8 +49,8 @@ osThreadId httpConfigTaskHandle;
 osThreadDef(httpConfigTask, osPriorityHigh, 1,
 		12*MINIMAL_STACK_SIZE);
 
-osThreadId dhcpInitTaskHandle;
-osThreadDef(dhcpTask, osPriorityNormal, 1,
+osThreadId ethernetTaskHandle;
+osThreadDef(ethernetTask, osPriorityNormal, 1,
 		5*MINIMAL_STACK_SIZE);
 
 osThreadId soundProcessingTaskHandle;
@@ -119,48 +107,43 @@ void initTask(void const * argument) {
 	logMsg("Init task");
 	
 	logMsg("Ethernet initialization...");
-	//MX_LWIP_Init();
+	ethInit();
 
 	/* DHCP initialization */
-	dhcpInitTaskHandle = osThreadCreate(osThread(dhcpTask), NULL);
+	ethernetTaskHandle = osThreadCreate(osThread(ethernetTask), NULL);
 
-	logMsg("Waiting for DHCP");
+	logMsg("Running ethernet thread");
 	do {
-		// waiting for DHCP initialization
-		event = osSignalWait(DHCP_FINISHED_SIGNAL, osWaitForever);
+		event = osSignalWait(ETHERNET_FINISHED_SIGNAL, osWaitForever);
 	} while (event.status != osOK && event.status != osEventSignal);
-	logMsg("DHCP task done");
-
-	// terminating DHCP initialization task
-	logMsg("Terminating dhcp");
-	osThreadTerminate(dhcpInitTaskHandle);
+	logMsg("Ethernet thread done");
 
 	/* Taska, mutexes, mail queues and memory pools initialization */
 	logMsg("Initializing memory pools");
 	spectrumBufferPool_id = osPoolCreate(osPool(spectrumBufferPool));
-	/*if (spectrumBufferPool_id == NULL)
-		printNullHandle("Spect pool");*/
+	if (spectrumBufferPool_id == NULL)
+		printNullHandle("Spect pool");
 	cfftPool_id = osPoolCreate(osPool(cfftPool));
-	/*if (cfftPool_id == NULL)
-		printNullHandle("Cfft pool");*/
+	if (cfftPool_id == NULL)
+		printNullHandle("Cfft pool");
 	soundBufferPool_id = osPoolCreate(osPool(soundBufferPool));
-	/*if (soundBufferPool_id == NULL)
-		printNullHandle("Sound pool");*/
+	if (soundBufferPool_id == NULL)
+		printNullHandle("Sound pool");
 
 	logMsg("Initializing mail queues");
 	dmaAudioMail_q_id = osMailCreate(osMailQ(dmaAudioMail_q), NULL);
-	/*if (dmaAudioMail_q_id == NULL)
-		printNullHandle("Audio mail q");*/
+	if (dmaAudioMail_q_id == NULL)
+		printNullHandle("Audio mail q");
 
 	logMsg("Initializing mutexes");
 	mainSpectrumBufferMutex_id = osMutexCreate(
 			osMutex(mainSpectrumBufferMutex));
-	/*if (mainSpectrumBufferMutex_id == NULL)
-		printNullHandle("Spect mut");*/
+	if (mainSpectrumBufferMutex_id == NULL)
+		printNullHandle("Spect mut");
 	mainSoundBufferMutex_id = osMutexCreate(osMutex(mainSoundBufferMutex));
-	/*if (mainSoundBufferMutex_id == NULL)
+	if (mainSoundBufferMutex_id == NULL)
 		printNullHandle("Audio mut");
-	ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
+	/*ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
 	if (ethernetInterfaceMutex_id == NULL)
 		printNullHandle("Eth mut");*/
 
@@ -189,11 +172,11 @@ void initTask(void const * argument) {
 	printNullHandle("Lcd task");
 #endif
 	soundProcessingTaskHandle = osThreadCreate(osThread(soundProcessingTask), NULL);
-	/*if (soundProcessingTaskHandle == NULL)
-		printNullHandle("Sound proc task");*/
+	if (soundProcessingTaskHandle == NULL)
+		printNullHandle("Sound proc task");
 	samplingTaskHandle = osThreadCreate(osThread(samplingTask), NULL);
-	/*if (samplingTaskHandle == NULL)
-		printNullHandle("Samp task");*/
+	if (samplingTaskHandle == NULL)
+		printNullHandle("Samp task");
 	//streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
 	/*if (streamingTaskHandle == NULL)
 		printNullHandle("Stream task");*/
@@ -220,102 +203,29 @@ void initTask(void const * argument) {
 }
 
 /**
- * @brief DHCP initialization task
+ * @brief Ethernet task
  */
-void dhcpTask(void const * argument) {
+void ethernetTask(void const * argument) {
 	uint32_t status;
 	
-	logMsg("Dhcp task start");
-	/*if (isEthernetCableConnected()) {
-		logMsg("Ethernet cable is connected");
-		uint32_t ipAddress;
-		dhcpState = DHCP_START;
-		do {
-			switch (dhcpState) {
-			case DHCP_START : {
-				ethernetInterfaceHandler.ip_addr.addr = 0;
-				ethernetInterfaceHandler.netmask.addr = 0;
-				ethernetInterfaceHandler.gw.addr = 0;
-				ipAddress = 0;
-				dhcp_start(&ethernetInterfaceHandler);
-				dhcpState = DHCP_WAIT_ADDRESS;
-				logMsg("Looking for DHCP server ...");
-				break;
-			}
+	printIp();
+	printNetmask();
+	printGateway();
 
-			case DHCP_WAIT_ADDRESS : {
-
-				ipAddress = ethernetInterfaceHandler.ip_addr.addr;
-
-				if (ipAddress != 0) {
-					dhcpState = DHCP_ADDRESS_ASSIGNED;
-
-					dhcp_stop(&ethernetInterfaceHandler);
-
-					logMsg("Got IP by DHCP:");
-					printAddress(&ethernetInterfaceHandler, IP_ADDRESS);
-					printAddress(&ethernetInterfaceHandler, NETMASK_ADDRESS);
-					printAddress(&ethernetInterfaceHandler, GATEWAY_ADDRESS);
-				} else {
-					if (ethernetInterfaceHandler.dhcp->tries > MAX_DHCP_TRIES) {
-						dhcpState = DHCP_TIMEOUT;
-
-						dhcp_stop(&ethernetInterfaceHandler);
-
-						ip_addr_t ipaAddress;
-						ip_addr_t netmask;
-						ip_addr_t gateway;
-
-						IP4_ADDR(&ipaAddress, IP_ADDR0, IP_ADDR1, IP_ADDR2,
-								IP_ADDR3);
-						IP4_ADDR(&netmask, NETMASK_ADDR0, NETMASK_ADDR1,
-								NETMASK_ADDR2, NETMASK_ADDR3);
-						IP4_ADDR(&gateway, GW_ADDR0, GW_ADDR1, GW_ADDR2,
-								GW_ADDR3);
-						netif_set_addr(&ethernetInterfaceHandler, &ipaAddress,
-								&netmask, &gateway);
-
-						logErr("DHCP timeout!");
-						logMsg("Static IP");
-						printAddress(&ethernetInterfaceHandler, IP_ADDRESS);
-						printAddress(&ethernetInterfaceHandler,
-						NETMASK_ADDRESS);
-						printAddress(&ethernetInterfaceHandler,
-						GATEWAY_ADDRESS);
-					}
-				}
-			}
-				break;
-
-			default:
-				break;
-			}
-			osDelay(250);
-		} while (dhcpState != DHCP_TIMEOUT && dhcpState != DHCP_ADDRESS_ASSIGNED );
-	} else {
-		dhcp_stop(&ethernetInterfaceHandler);
-		logErr("Ethernet cable is not connected");
-		logMsg("Static IP");
-		printAddress(&ethernetInterfaceHandler, IP_ADDRESS);
-		printAddress(&ethernetInterfaceHandler, NETMASK_ADDRESS);
-		printAddress(&ethernetInterfaceHandler, GATEWAY_ADDRESS);
-	}*/
-
-	// sending DHCP finished signal to initialization task
-	logMsg("DHCP task send signal");
-	status = osSignalSet(initTaskHandle, DHCP_FINISHED_SIGNAL);
+	// sending ethernet finished signal to initialization task
+	status = osSignalSet(initTaskHandle, ETHERNET_FINISHED_SIGNAL);
 	if (status != osOK) {
-		logErrVal("ERROR: DHCP finished signal", status);
+		logErrVal("ERROR: Eth finished signal", status);
 	}
-
-	logMsg("DHCP task end");
-	// waiting forever for termination
+	
+	logMsg("Executing net thread");
 	while (1)
-		osDelay(osWaitForever);
+		net_main();
+		osThreadYield();
 }
 
 void BSP_AUDIO_IN_Error_CallBack(void) {
-	logMsg("Error callback");
+	logMsg("Audio error callback");
 }
 
 /**
@@ -362,7 +272,6 @@ void samplingTask(void const * argument) {
 		if (event.status == osEventMail) {
 			receivedSound = (SoundMailStr *) event.value.p;
 		
-			logMsg("Sampling");
 			// waiting for access to mailSoundBuffer
 			status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
 			if (status == osOK) {
@@ -394,6 +303,7 @@ void soundProcessingTask(void const * argument) {
 	SpectrumStr* temporarySpectrumBufferStr;
 	arm_cfft_instance_f32* cfftInstance;
 	osStatus status;
+
 	osEvent event;
 	float32_t temporaryAudioBuffer[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE];
 
@@ -403,7 +313,6 @@ void soundProcessingTask(void const * argument) {
 
 	while (1) {
 		osDelay(100);
-		logMsg("Sound processing");
 		
 		// waiting for start signal
 		//event = osSignalWait(START_SOUND_PROCESSING_SIGNAL, osWaitForever);

@@ -335,7 +335,7 @@
               <MiscControls></MiscControls>
               <Define></Define>
               <Undefine></Undefine>
-              <IncludePath>.\IncludeUser</IncludePath>
+              <IncludePath>.\IncludeUser;.\cJSON</IncludePath>
             </VariousControls>
           </Cads>
           <Aads>
@@ -417,6 +417,21 @@
               <FileType>1</FileType>
               <FilePath>.\SourceUser\soundProcessing.c</FilePath>
             </File>
+            <File>
+              <FileName>ethernetLib.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\SourceUser\ethernetLib.c</FilePath>
+            </File>
+            <File>
+              <FileName>jsonConfiguration.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\SourceUser\jsonConfiguration.c</FilePath>
+            </File>
+            <File>
+              <FileName>usrTaskSupport.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\SourceUser\usrTaskSupport.c</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -457,6 +472,21 @@
               <FileType>5</FileType>
               <FilePath>.\IncludeUser\soundProcessing.h</FilePath>
             </File>
+            <File>
+              <FileName>ethernetLib.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\IncludeUser\ethernetLib.h</FilePath>
+            </File>
+            <File>
+              <FileName>jsonConfiguration.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\IncludeUser\jsonConfiguration.h</FilePath>
+            </File>
+            <File>
+              <FileName>usrTaskSupport.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\IncludeUser\usrTaskSupport.h</FilePath>
+            </File>
           </Files>
         </Group>
         <Group>
@@ -484,6 +514,21 @@
               <FileName>stm32746g_discovery.c</FileName>
               <FileType>1</FileType>
               <FilePath>C:\Keil_v5\ARM\PACK\Keil\STM32F7xx_DFP\2.8.0\Drivers\BSP\STM32746G-Discovery\stm32746g_discovery.c</FilePath>
+            </File>
+          </Files>
+        </Group>
+        <Group>
+          <GroupName>cJSON</GroupName>
+          <Files>
+            <File>
+              <FileName>cJSON.c</FileName>
+              <FileType>1</FileType>
+              <FilePath>.\cJSON\cJSON.c</FilePath>
+            </File>
+            <File>
+              <FileName>cJSON.h</FileName>
+              <FileType>5</FileType>
+              <FilePath>.\cJSON\cJSON.h</FilePath>
             </File>
           </Files>
         </Group>
