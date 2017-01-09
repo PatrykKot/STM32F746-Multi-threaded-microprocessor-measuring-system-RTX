@@ -38,13 +38,12 @@ void ethInit(void);
 void printIp(void);
 void printNetmask(void);
 void printGateway(void);
-/*void printAddress(const struct netif* gnetif, uint8_t addressType);
-uint32_t isEthernetCableConnected();
-err_t sendSpectrum(SpectrumStr* ampStr, struct netconn *client);
-uint8_t isNetconnStatusOk(err_t status);
-err_t udpSend(struct netconn *client, void* buf, uint32_t buffSize);
-void printContent(struct netbuf* buf);
-uint16_t getRequestType(struct netbuf* buf);
+void initStreamingSocket(void);
+void openStreamingSocket(uint32_t port);
+netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port);
+void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength);
+void closeStreamingSocket(void);
+/*uint16_t getRequestType(struct netbuf* buf);
 err_t sendConfiguration(StmConfig* config, struct netconn* client,
 		char* requestParameters);
 err_t sendHttpResponse(struct netconn* client, char* httpStatus,

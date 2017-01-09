@@ -43,7 +43,7 @@ osThreadDef(samplingTask, osPriorityRealtime, 1,
 
 osThreadId streamingTaskHandle;
 osThreadDef(streamingTask, osPriorityRealtime, 1,
-		5*MINIMAL_STACK_SIZE);
+		15*MINIMAL_STACK_SIZE);
 
 osThreadId httpConfigTaskHandle;
 osThreadDef(httpConfigTask, osPriorityHigh, 1,
@@ -76,8 +76,8 @@ osMailQId dmaAudioMail_q_id;
 osMutexDef(mainSpectrumBufferMutex);
 osMutexId mainSpectrumBufferMutex_id;
 
-//osMutexDef(ethernetInterfaceMutex);
-//osMutexId ethernetInterfaceMutex_id;
+osMutexDef(ethernetInterfaceMutex);
+osMutexId ethernetInterfaceMutex_id;
 
 osMutexDef(mainSoundBufferMutex);
 osMutexId mainSoundBufferMutex_id;
@@ -143,9 +143,9 @@ void initTask(void const * argument) {
 	mainSoundBufferMutex_id = osMutexCreate(osMutex(mainSoundBufferMutex));
 	if (mainSoundBufferMutex_id == NULL)
 		printNullHandle("Audio mut");
-	/*ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
+	ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
 	if (ethernetInterfaceMutex_id == NULL)
-		printNullHandle("Eth mut");*/
+		printNullHandle("Eth mut");
 
 	/* Global variables */
 	logMsg("Preparing global variables");
@@ -177,9 +177,9 @@ void initTask(void const * argument) {
 	samplingTaskHandle = osThreadCreate(osThread(samplingTask), NULL);
 	if (samplingTaskHandle == NULL)
 		printNullHandle("Samp task");
-	//streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
-	/*if (streamingTaskHandle == NULL)
-		printNullHandle("Stream task");*/
+	streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
+	if (streamingTaskHandle == NULL)
+		printNullHandle("Stream task");
 	//httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
 	/*if (httpConfigTaskHandle == NULL)
 		printNullHandle("HTTP task");*/
@@ -208,6 +208,7 @@ void initTask(void const * argument) {
 void ethernetTask(void const * argument) {
 	uint32_t status;
 	
+	osDelay(4000);
 	printIp();
 	printNetmask();
 	printGateway();
@@ -311,13 +312,11 @@ void soundProcessingTask(void const * argument) {
 	temporarySpectrumBufferStr = osPoolCAlloc(spectrumBufferPool_id);
 	cfftInstance = osPoolCAlloc(cfftPool_id);
 
-	while (1) {
-		osDelay(100);
-		
+	while (1) {	
 		// waiting for start signal
-		//event = osSignalWait(START_SOUND_PROCESSING_SIGNAL, osWaitForever);
+		event = osSignalWait(START_SOUND_PROCESSING_SIGNAL, osWaitForever);
 
-		//if (event.status == osEventSignal) {
+		if (event.status == osEventSignal) {
 
 			// waiting for access to main sound buffer
 			status = osMutexWait(mainSoundBufferMutex_id, osWaitForever);
@@ -352,7 +351,7 @@ void soundProcessingTask(void const * argument) {
 						// copying spectrum from temporary buffer to main buffer
 						soundProcessingCopyAmplitudeInstance(
 								temporarySpectrumBufferStr, mainSpectrumBuffer);
-
+						
 						// releasing main spectrum buffer mutex
 						status = osMutexRelease(mainSpectrumBufferMutex_id);
 						if (status != osOK) {
@@ -375,8 +374,8 @@ void soundProcessingTask(void const * argument) {
 			} else {
 				logErr("Sampling mutex (sound processing)");
 			}
-		//} else
-		//	logErrVal("ST sp wait", event.status);
+		} else
+		logErrVal("ST sp wait", event.status);
 	}
 }
 
@@ -400,34 +399,19 @@ void lcdTask(void const * argument) {
  * @brief Spectrum UDP streaming
  */
 void streamingTask(void const * argument) {
-	/*struct netconn *udpStreamingSocket = NULL;
-	err_t status;
-	err_t netErr;
-
-	// creating UDP socket
-	udpStreamingSocket = netconn_new(NETCONN_UDP);
-	if (udpStreamingSocket == NULL)
-		logErr("Null UDP client");
-	else
-		udpStreamingSocket->recv_timeout = 1;
-
-	// binding socket to ethernet interface on UDP_STREAMING_PORT
-	status = netconn_bind(udpStreamingSocket, &ethernetInterfaceHandler.ip_addr,
-	UDP_STREAMING_PORT);
-	if (status != ERR_OK)
-		logErrVal("Udp bind", status);
-
+	int32_t status;
+	netStatus netStatusVal;
+	
+	initStreamingSocket();	
+	
 	while (1) {
 		// setting signal to start sound processing
-		status = osSignalSet(soundProcessingTaskHandle,
-		START_SOUND_PROCESSING_SIGNAL);
-		osDelay(configStr.amplitudeSamplingDelay);
-
-		// delay
-		//osDelay(10);
+		status = osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
+		//osDelay(configStr.amplitudeSamplingDelay);
+		osDelay(20);
 
 		// waiting for acces to ethernet interface
-		osStatus status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
+		status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
 		if (status == osOK) {
 
 			// waiting for access to main spectrum buffer
@@ -436,15 +420,16 @@ void streamingTask(void const * argument) {
 			if (status == osOK) {
 
 				// "connecting" to UDP
-				netErr = netconn_connect(udpStreamingSocket,
-						&configStr.clientIp, configStr.clientPort);
-				if (netErr)
-					logErrVal("UDP connect", netErr);
-
+				//openStreamingSocket(configStr.clientPort);
+				openStreamingSocket(53426);
+				
 				// sending main spectrum buffer by UDP
-				netErr = sendSpectrum(mainSpectrumBuffer, udpStreamingSocket);
-				if (netErr)
-					logErrVal("UDP write", netErr);
+				netStatusVal = sendSpectrum(mainSpectrumBuffer, "192.168.0.10", 53426);
+				if(netStatusVal != netOK) {
+					logErrVal("Net status ", netStatusVal);
+				}
+				
+				closeStreamingSocket();
 
 				// releasing main spectrum buffer mutex
 				status = osMutexRelease(mainSpectrumBufferMutex_id);
@@ -459,7 +444,7 @@ void streamingTask(void const * argument) {
 			if (status != osOK)
 				logErrVal("UDP eth mut release", status);
 		}
-	}*/
+	}
 }
 
 /**

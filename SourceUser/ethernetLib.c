@@ -10,6 +10,13 @@
 extern  LOCALM localm[];
 #define LocM   localm[NETIF_ETH]
 
+static uint32_t streamingSocketHandle;
+
+union FloatConversion {
+	float32_t floatVal;
+	uint32_t intVal;
+};
+
 /**
  * @var char httpOkHeaderPattern[]
  * @brief Plain header of 200 HTTP response
@@ -48,6 +55,59 @@ void printGateway() {
 	char msg[30];
 	sprintf(msg, "Gateway: %s", ip4_ntoa (LocM.DefGW));
 	logMsg(msg);
+}
+
+uint32_t streamingSocketCallback(int32_t socket, const uint8_t *ip_addr, uint16_t port, const uint8_t *buf, uint32_t len) {
+	logMsg("Streaming socket callback");
+	
+  return 0;
+}
+
+void initStreamingSocket() {
+	streamingSocketHandle = udp_get_socket (0, 0, streamingSocketCallback);
+}
+
+void openStreamingSocket(uint32_t port) {
+	udp_open(streamingSocketHandle, port);
+}
+
+netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port) {
+	//uint8_t ip;
+	const uint8_t ip[4] = {192,168,1,10};
+	uint8_t* buff;
+	uint32_t length;
+	
+	length = ETHERNET_AMP_BUFFER_SIZE * sizeof(float32_t);	
+	buff = udp_get_buf(length);
+	//ip4_aton(ipAddress, &ip);
+	
+	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, ETHERNET_AMP_BUFFER_SIZE);
+	
+	return udp_send(streamingSocketHandle, ip, port, buff, length);
+}
+
+void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength) {
+	uint32_t intIterator;
+	uint32_t floatIterator;
+	uint32_t floatSizeIterator;
+	uint32_t floatSize;
+	union FloatConversion conv;
+	
+	floatSize = sizeof(float32_t);
+	intIterator = 0;
+	
+	for(floatIterator = 0; floatIterator < vectorLength; floatIterator++)
+	{
+		conv.floatVal = spectrumVector[floatIterator];
+		for(floatSizeIterator = 0; floatSizeIterator < floatSize; floatSizeIterator++)
+		{
+			buffer[intIterator++] = (uint8_t)(conv.intVal >> ((0x08 * floatSizeIterator)));
+		}
+	}
+}
+
+void closeStreamingSocket() {
+	udp_close(streamingSocketHandle);
 }
 
 /**
