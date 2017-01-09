@@ -3,7 +3,7 @@
  * Auto generated Run-Time-Environment Component Configuration File
  *      *** Do not modify ! ***
  *
- * Project: 'HTTP_Server' 
+ * Project: 'STM_Project' 
  * Target:  'STM32F746 Flash' 
  */
 
