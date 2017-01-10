@@ -25,12 +25,9 @@
  * @brief Structure represents device configuration
  */
 typedef struct {
-	//uint8_t started;
-	//uint8_t udpEndpointAddr[4];
-	//uint32_t udpEndpointPort;
 	uint8_t amplitudeSamplingDelay;
 	uint32_t audioSamplingFrequency;
-	//ip_addr_t clientIp;
+	char clientIp[20];
 	uint32_t clientPort;
 } StmConfig;
 

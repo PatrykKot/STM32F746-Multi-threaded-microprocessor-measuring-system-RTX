@@ -47,11 +47,11 @@ osThreadDef(streamingTask, osPriorityRealtime, 1,
 
 osThreadId httpConfigTaskHandle;
 osThreadDef(httpConfigTask, osPriorityHigh, 1,
-		12*MINIMAL_STACK_SIZE);
+		20*MINIMAL_STACK_SIZE);
 
 osThreadId ethernetTaskHandle;
 osThreadDef(ethernetTask, osPriorityNormal, 1,
-		5*MINIMAL_STACK_SIZE);
+		20*MINIMAL_STACK_SIZE);
 
 osThreadId soundProcessingTaskHandle;
 osThreadDef(soundProcessingTask, osPriorityHigh, 1,
@@ -149,7 +149,10 @@ void initTask(void const * argument) {
 
 	/* Global variables */
 	logMsg("Preparing global variables");
-	//configStr = osPoolCAlloc(stmConfigPool_id);
+	//configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
+	//configStr.audioSamplingFrequency = 44100;
+	//configStr.clientPort = UDP_STREAMING_PORT;
+	//strcpy(configStr.clientIp, UDP_STREAMING_IP);
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
 	mainSoundBuffer->iterator = 0;
@@ -159,11 +162,6 @@ void initTask(void const * argument) {
 	for (i = 0; i < mainSoundBuffer->size; i++) {
 		mainSoundBuffer->soundBuffer[i] = 0;
 	}
-
-	/*configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
-	configStr.audioSamplingFrequency = 44100;
-	configStr.clientPort = UDP_STREAMING_PORT;
-	IP4_ADDR(&configStr.clientIp, 192, 168, 1, 10);*/
 
 	logMsg("Initializing tasks");
 #ifdef LCD_PRINTER_SUPPORT
@@ -180,16 +178,14 @@ void initTask(void const * argument) {
 	streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
 	if (streamingTaskHandle == NULL)
 		printNullHandle("Stream task");
-	//httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
-	/*if (httpConfigTaskHandle == NULL)
-		printNullHandle("HTTP task");*/
+	httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
+	if (httpConfigTaskHandle == NULL)
+		printNullHandle("HTTP task");
 
 	logMsg("Preparing audio recording");
-	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE,
-	AUDIO_RECORDER_VOLUME_0DB,
-			//configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
-			44100) != AUDIO_RECORDER_OK) {
-	logErr("Audio rec init");
+	//if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
+	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, 44100) != AUDIO_RECORDER_OK) {
+		logErr("Audio rec init");
 	}
 
 	/* Audio recorder - start recording */
@@ -208,7 +204,7 @@ void initTask(void const * argument) {
 void ethernetTask(void const * argument) {
 	uint32_t status;
 	
-	osDelay(4000);
+	osDelay(5000);
 	printIp();
 	printNetmask();
 	printGateway();
@@ -241,13 +237,12 @@ void audioRecorder_FullBufferFilled(void) {
 	
 	if(soundSamples == NULL)
 	{
-		//logErr("Null sound samples");
+		logErr("Null sound samples");
 	}
 	else
 	{
-		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer,
-		//AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
-		AUDIO_BUFFER_SIZE, 44100);
+		//audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
+		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, 44100);
 
 		// sending mail to queue
 		mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
@@ -408,41 +403,30 @@ void streamingTask(void const * argument) {
 		// setting signal to start sound processing
 		status = osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
 		//osDelay(configStr.amplitudeSamplingDelay);
-		osDelay(20);
+		if(netStatusVal == netOK)
+		{
+			osDelay(10);
+		}
+		else
+		{
+			osDelay(UDP_STREAMING_FAILURE_TIMEOUT);
+		}
 
 		// waiting for acces to ethernet interface
 		status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
 		if (status == osOK) {
-
-			// waiting for access to main spectrum buffer
-			status = osMutexWait(mainSpectrumBufferMutex_id,
-			osWaitForever);
-			if (status == osOK) {
-
 				// "connecting" to UDP
 				//openStreamingSocket(configStr.clientPort);
 				openStreamingSocket(53426);
 				
 				// sending main spectrum buffer by UDP
-				netStatusVal = sendSpectrum(mainSpectrumBuffer, "192.168.0.10", 53426);
+				//netStatusVal = sendSpectrum(mainSpectrumBuffer, configStr.clientIp, configStr.clientPort);
+				netStatusVal = sendSpectrum(mainSpectrumBuffer, "IP", 53426);
 				if(netStatusVal != netOK) {
 					logErrVal("Net status ", netStatusVal);
 				}
 				
 				closeStreamingSocket();
-
-				// releasing main spectrum buffer mutex
-				status = osMutexRelease(mainSpectrumBufferMutex_id);
-				if (status != osOK)
-					logErrVal("UDP main spect mut release", status);
-			} else {
-				logErrVal("UDP eth int mut wait", status);
-			}
-
-			// releasing ethernet interface mutex
-			status = osMutexRelease(ethernetInterfaceMutex_id);
-			if (status != osOK)
-				logErrVal("UDP eth mut release", status);
 		}
 	}
 }
@@ -451,181 +435,37 @@ void streamingTask(void const * argument) {
  * @brief Device configuration (by network using HTTP)
  */
 void httpConfigTask(void const* argument) {
-	/*struct netconn *httpServer = NULL;
-
-	// creating TCP server
-	httpServer = netconn_new(NETCONN_TCP);
-	if (httpServer == NULL)
-		logErr("Null TCP");
-	httpServer->recv_timeout = HTTP_HOST_ACCEPT_TIMEOUT;
-
-	// binding server to ethernet interface on port 80
-	err_t netStatus = netconn_bind(httpServer,
-			&ethernetInterfaceHandler.ip_addr, 80);
-	if (netStatus != ERR_OK)
-		logErrVal("TCP bind", netStatus);
-
-	// starting listening
-	netStatus = netconn_listen(httpServer);
-	if (netStatus != ERR_OK)
-		logErrVal("TCP listen", netStatus);
-
-	while (1) {
-		// delay
-		osDelay(HTTP_CONFIG_TASK_DELAY_TIME);
-		//logMsg("HTTP task");
-
-		// waiting for acces to ethernet interface
-		osStatus status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
-		if (status == osOK) {
-			struct netconn *newClient = NULL;
-
-			// accepting incoming client
-			netStatus = netconn_accept(httpServer, &newClient);
-			if (netStatus == ERR_OK) {
-				// if there is a client
-
-				struct netbuf* recvBuf;
-				newClient->recv_timeout = HTTP_RECEIVE_TIMEOUT;
-
-				// receiving data from client
-				err_t netStatus = netconn_recv(newClient, &recvBuf);
-				if (netStatus == ERR_OK) {
-
-					// encoding HTTP request type
-					uint16_t requestType = getRequestType(recvBuf);
-
-					switch (requestType) {
-					case GET_REQUEST: {
-						logMsg("GET request");
-						if (isConfigRequest(recvBuf)) {
-							// if it is GET config request
-							logMsg("Config request");
-							sendConfiguration(&configStr, newClient,
-									"\r\nConnection: Closed");
-						} else if (isSystemRequest(recvBuf)) {
-							// if it is GET config request
-							logMsg("System request");
-
-							char systemDetails[512];
-							getTaskUsageDetails(systemDetails);
-							sendHttpResponse(newClient, "200 OK",
-									"\r\nConnection: Closed", systemDetails);
-						} else {
-							sendHttpResponse(newClient, "404 Not Found",
-									"\r\nContent-Type: text/html",
-									"<h1>404 Not Found</h1>");
-							logErr("Not supported request");
-						}
-						break;
-					}
-					case PUT_REQUEST: {
-						logMsg("PUT request");
-						if (isConfigRequest(recvBuf)) {
-							logMsg("Config request");
-
-							sendHttpResponse(newClient, "200 OK", "", "");
-							netbuf_delete(recvBuf);
-
-							// receiving JSON data
-							err_t netStatus = netconn_recv(newClient, &recvBuf);
-							if (netStatus == ERR_OK) {
-								StmConfig tempConfigStr;
-
-								// parsing JSON data to config structure
-								parseJSON(recvBuf, &tempConfigStr);
-
-								// processing new data
-								if (tempConfigStr.amplitudeSamplingDelay
-										!= configStr.amplitudeSamplingDelay) {
-									logMsgVal("New delay ",
-											tempConfigStr.amplitudeSamplingDelay);
-								}
-								if (tempConfigStr.audioSamplingFrequency
-										!= configStr.audioSamplingFrequency) {
-									audioRecorderSetSamplingFrequency(
-											tempConfigStr.audioSamplingFrequency);
-									logMsgVal("New frequency ",
-											tempConfigStr.audioSamplingFrequency);
-								}
-								if (tempConfigStr.clientIp.addr
-										!= configStr.clientIp.addr) {
-									char text[40];
-									sprintf(text, "New endpoint %d.%d.%d.%d",
-											IP_ADDR_GET(tempConfigStr.clientIp,
-													0),
-											IP_ADDR_GET(tempConfigStr.clientIp,
-													1),
-											IP_ADDR_GET(tempConfigStr.clientIp,
-													2),
-											IP_ADDR_GET(tempConfigStr.clientIp,
-													3));
-									logMsg(text);
-								}
-								if (tempConfigStr.clientPort
-										!= configStr.clientPort) {
-									logMsgVal("New port ",
-											tempConfigStr.clientPort);
-								}
-
-								logMsgVal("Delay ",
-										tempConfigStr.amplitudeSamplingDelay);
-								logMsgVal("Freq ",
-										tempConfigStr.audioSamplingFrequency);
-								char text[40];
-								sprintf(text, "Endpoint %d.%d.%d.%d",
-										IP_ADDR_GET(tempConfigStr.clientIp, 0),
-										IP_ADDR_GET(tempConfigStr.clientIp, 1),
-										IP_ADDR_GET(tempConfigStr.clientIp, 2),
-										IP_ADDR_GET(tempConfigStr.clientIp, 3));
-								logMsg(text);
-								logMsgVal("Port ", tempConfigStr.clientPort);
-
-								// copying temporary structure to main config structure
-								copyConfig(&configStr, &tempConfigStr);
-								sendConfiguration(&configStr, newClient,
-										"\r\nConnection: Closed\r\nContent-Type: application/json");
-							} else {
-								logErr("No PUT data");
-							}
-						} else {
-							sendHttpResponse(newClient, "404 Not Found",
-									"\r\nContent-Type: text/html",
-									"<h1>404 Not Found</h1>");
-							logErr("Not supported request");
-						}
-						break;
-					}
-					default: {
-						sendHttpResponse(newClient, "501 Not Implemented",
-								"\r\nContent-Type: text/html",
-								"<h1>501 Not Implemented</h1>");
-						logErr("Not implemented method");
-						break;
-					}
-					}
-
-					// deleting socket buffer
-					netbuf_delete(recvBuf);
-				} else
-					logErrVal("TCP no data", netStatus);
-
-				// closing connectoin
-				netStatus = netconn_close(newClient);
-				if (netStatus != ERR_OK)
-					logErrVal("TCP close", netStatus);
-
-				// free client memory
-				netStatus = netconn_delete(newClient);
-				if (netStatus != ERR_OK)
-					logErrVal("TCP delete", netStatus);
-			} else if (netStatus != ERR_TIMEOUT)
-				logErrVal("TCP accept", status);
-
-			// releasing ethernet interface mutex
-			status = osMutexRelease(ethernetInterfaceMutex_id);
-			if (status != osOK)
-				logErrVal("Eth mut release", status);
+	osEvent event;
+	char data[1024];
+	int32_t httpSocket;
+	
+	initHttpSocket(&httpConfigTaskHandle);
+	httpStartListen();
+	
+	while(1)
+	{
+		event = osSignalWait(GET_REQUEST_SIGNAL, osWaitForever);
+		if (event.status == osOK || event.status == osEventSignal)
+		{
+			osDelay(100);
+			
+			httpSocket = getHttpSocket();
+			getData(data);
+			
+			if(isConfigRequest(data))
+			{
+				sendHttpResponse(httpSocket, "200 OK", "\r\nConnection: Closed\r\nContent-Type: application/json", "<h1>OK</h1>");
+			}
+			else if(isSystemRequest(data))
+			{
+				sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
+			}
+			else
+			{
+				sendHttpResponse(httpSocket, "404 Not Found","\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
+			}
+			
+			tcp_close(httpSocket);
 		}
-	}*/
+	}
 }

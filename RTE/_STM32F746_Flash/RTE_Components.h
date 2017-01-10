@@ -42,6 +42,5 @@
 #define RTE_Network_Interface_ETH_0     /* Network Interface ETH 0 */
 #define RTE_Network_Socket_TCP          /* Network Socket TCP */
 #define RTE_Network_Socket_UDP          /* Network Socket UDP */
-#define RTE_Network_Web_Server_RO       /* Network Web Server with Read-only Web Resources */
 
 #endif /* RTE_COMPONENTS_H */

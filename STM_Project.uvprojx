@@ -615,12 +615,6 @@
           <targetInfo name="STM32F746 Flash"/>
         </targetInfos>
       </component>
-      <component Cbundle="MDK-Pro Net_v6" Cclass="Network" Cgroup="Service" Csub="Web Server Compact" Cvendor="Keil" Cversion="6.7.0" condition="Network Web Server Compact">
-        <package name="MDK-Middleware" schemaVersion="1.4" url="http://www.keil.com/pack/" vendor="Keil" version="7.2.0"/>
-        <targetInfos>
-          <targetInfo name="STM32F746 Flash"/>
-        </targetInfos>
-      </component>
       <component Cbundle="MDK-Pro Net_v6" Cclass="Network" Cgroup="Socket" Csub="TCP" Cvendor="Keil" Cversion="6.7.0" condition="Network Interface">
         <package name="MDK-Middleware" schemaVersion="1.4" url="http://www.keil.com/pack/" vendor="Keil" version="7.2.0"/>
         <targetInfos>
@@ -818,12 +812,10 @@
         </targetInfos>
       </file>
       <file attr="config" category="source" name="Network_v6\Config\Net_Config_HTTP_Server.h" version="5.0.4">
-        <instance index="0">RTE\Network\Net_Config_HTTP_Server.h</instance>
+        <instance index="0" removed="1">RTE\Network\Net_Config_HTTP_Server.h</instance>
         <component Cbundle="MDK-Pro Net_v6" Cclass="Network" Cgroup="Service" Csub="Web Server Compact" Cvendor="Keil" Cversion="6.7.0" condition="Network Web Server Compact"/>
         <package name="MDK-Middleware" schemaVersion="1.4" url="http://www.keil.com/pack/" vendor="Keil" version="7.3.0"/>
-        <targetInfos>
-          <targetInfo name="STM32F746 Flash"/>
-        </targetInfos>
+        <targetInfos/>
       </file>
       <file attr="config" category="source" name="Network_v6\Config\Net_Config_TCP.h" version="5.0.4">
         <instance index="0">RTE\Network\Net_Config_TCP.h</instance>
