@@ -432,38 +432,83 @@ void httpConfigTask(void const* argument) {
 	osEvent event;
 	char data[1024];
 	int32_t httpSocket;
+	StmConfig tempConfig;
 	
 	initHttpSocket(&httpConfigTaskHandle);
 	httpStartListen();
 	
 	while(1)
 	{
-		event = osSignalWait(GET_REQUEST_SIGNAL, osWaitForever);
-		if (event.status == osOK || event.status == osEventSignal)
+		event = osSignalWait(0, HTTP_REQUEST_WAITING_TIMEOUT);
+		
+		if(event.status == osEventSignal)
 		{
-			// waiting for finish the socket interrupt
-			osDelay(1);
-			
-			httpSocket = getHttpSocket();
-			getData(data);
-			
-			if(isConfigRequest(data))
+			switch(event.value.signals)
 			{
-				logMsg("Config request");
-				sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
-			}
-			else if(isSystemRequest(data))
-			{
-				logErr("System request");
-				sendHttpResponse(httpSocket, "501 Not Implemented","\r\nContent-Type: text/html", "<h1>System info not supported on RTX</h1>");
-			}
-			else
-			{
-				logErr("404 Not Found");
-				sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
-			}
+				case GET_REQUEST_SIGNAL:
+				{
+					// waiting for finish the socket interrupt
+					osDelay(1);
+					
+					httpSocket = getHttpSocket();
+					getData(data);
+					
+					logMsg("GET request");
 			
-			closeSocket(httpSocket);
+					if(isConfigRequest(data))
+					{
+						logMsg("Config request");
+						sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
+					}
+					else if(isSystemRequest(data))
+					{
+						logErr("System request");
+						sendHttpResponse(httpSocket, "501 Not Implemented","\r\nContent-Type: text/html", "<h1>System info not supported on RTX</h1>");
+					}
+					else
+					{
+						logErr("404 Not Found");
+						sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
+					}
+			
+					closeSocket(httpSocket);
+					break;
+				}
+		
+				case PUT_REQUEST_SIGNAL:
+				{
+					// waiting for finish the socket interrupt
+					osDelay(1);
+					
+					logMsg("PUT request");
+					getData(data);
+					httpSocket = getHttpSocket();
+					
+					event = osSignalWait(HTTP_DATA_SIGNAL, HTTP_DATA_WAITING_TIMEOUT);
+					if (event.status == osEventSignal && event.value.signals == HTTP_DATA_SIGNAL)
+					{
+						// waiting for finish the socket interrupt
+						osDelay(1);
+						
+						getData(data);
+						parseJSON(data, &tempConfig);
+						logMsgVal("Got freq ", tempConfig.audioSamplingFrequency);
+						sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
+					}
+					else
+					{
+						logErr("Didn't get PUT data");
+					}
+					
+					closeSocket(httpSocket);
+					break;
+				}
+				default:
+				{
+					closeSocket(getHttpSocket());
+					break;
+				}
+			}
 		}
 	}
 }

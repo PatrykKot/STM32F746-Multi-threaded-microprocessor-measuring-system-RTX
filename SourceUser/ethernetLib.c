@@ -136,6 +136,7 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
       //logMsg("Event ACK");
       break;
     case tcpEventData:
+		{
       //logMsg("Event data");
 			requestType = getRequestType(request);
 			switch(requestType)
@@ -154,11 +155,13 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
 				}
 				default:
 				{
-					logErr("Not supported request");
-					tcp_close(soc);
+					strcpy(httpData, request);
+					osSignalSet(*httpThreadHandle, HTTP_DATA_SIGNAL);
+					break;
 				}
 			}
-      break;
+			break;
+		}
   }
   return 0;
 }

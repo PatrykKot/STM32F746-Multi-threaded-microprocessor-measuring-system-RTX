@@ -32,7 +32,7 @@ typedef struct {
 } StmConfig;
 
 /* Functions */
-//void parseJSON(struct netbuf* buf, StmConfig* config);
+void parseJSON(char* jsonData, StmConfig* config);
 void stmConfigToString(StmConfig* config, char* str);
 void copyConfig(StmConfig* destination, StmConfig* source);
 

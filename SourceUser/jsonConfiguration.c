@@ -12,32 +12,18 @@ static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingD
 /**
  * @brief Parses \netbuf (JSON data) to \StmConfig structure
  */
-/*void parseJSON(struct netbuf* buf, StmConfig* config) {
-	void* data;
-	uint16_t length;
-	netbuf_data(buf, &data, &length);
-	char* jsonData = (char*) data;
-
-	cJSON* parser = cJSON_Parse(jsonData);*/
-	/*config->started = cJSON_GetObjectItem(parser, "Started")->valueint;*/
-	/*char* udpEndpoint =
-			cJSON_GetObjectItem(parser, "UdpEndpointIP")->valuestring;*/
-	/*config->udpEndpointPort =
-	 cJSON_GetObjectItem(parser, "UdpEndpointPort")->valueint;*/
-	/*config->amplitudeSamplingDelay = cJSON_GetObjectItem(parser,
+void parseJSON(char* jsonData, StmConfig* config) {
+	cJSON* parser = cJSON_Parse(jsonData);
+	strcpy(config->clientIp, cJSON_GetObjectItem(parser, "UdpEndpointIP")->valuestring);
+	config->amplitudeSamplingDelay = cJSON_GetObjectItem(parser,
 			"AmplitudeSamplingDelay")->valueint;
 	config->audioSamplingFrequency = cJSON_GetObjectItem(parser,
 			"SamplingFrequency")->valueint;
 	config->clientPort =
 			cJSON_GetObjectItem(parser, "UdpEndpointPort")->valueint;
 
-	int ipTab[4];
-	sscanf(udpEndpoint, "%d.%d.%d.%d", &ipTab[0], &ipTab[1], &ipTab[2],
-			&ipTab[3]);
-	IP4_ADDR(&config->clientIp, ipTab[0], ipTab[1], ipTab[2], ipTab[3]);
-
 	cJSON_Delete(parser);
-}*/
+}
 
 /**
  * @brief Converts \ref StmConfig structure to JSON string

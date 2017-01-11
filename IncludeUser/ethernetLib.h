@@ -34,7 +34,7 @@
  typedef enum {
 	 GET_REQUEST_SIGNAL = 0x01,
 	 PUT_REQUEST_SIGNAL = 0x02,
-	 DATA_SIGNAL = 0x03,
+	 HTTP_DATA_SIGNAL = 0x03,
  } HttpServerSignal;
 
 /**
@@ -51,6 +51,10 @@
  *
  */
 #define UDP_STREAMING_FAILURE_TIMEOUT 3000
+ 
+#define HTTP_REQUEST_WAITING_TIMEOUT 5
+ 
+#define HTTP_DATA_WAITING_TIMEOUT 100
 
 /* Functions */
 void ethInit(void);
