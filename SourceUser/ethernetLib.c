@@ -173,8 +173,7 @@ void getData(char* data) {
 }
 
 void httpStartListen() {
-	netStatus status;
-	status = tcp_listen(httpSocketHandle, 80);
+	tcp_listen(httpSocketHandle, 80);
 }
 
 /**
@@ -201,12 +200,12 @@ int32_t getHttpSocket() {
  * @param client: pointer to \ref netconn structure (represents endpoint client)
  * @retval ERR_OK if there are no errors
  */
-/*err_t sendConfiguration(StmConfig* config, struct netconn* client,
-		char* requestParameters) {
+netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters) {
 	char configContent[256];
 	stmConfigToString(config, configContent);
+	logMsg(configContent);
 	return sendHttpResponse(client, "200 OK", requestParameters, configContent);
-}*/
+}
 
 netStatus sendHttpResponse(int32_t client, char* httpStatus,
 		char* requestParameters, char* content) {
@@ -224,6 +223,7 @@ netStatus sendString(int32_t client, const char* array) {
 	{
 		length = strlen(array);
 		buf = tcp_get_buf(length);
+		memcpy (buf, array, length);
 		return tcp_send(client, buf, length);
 	}
 	else

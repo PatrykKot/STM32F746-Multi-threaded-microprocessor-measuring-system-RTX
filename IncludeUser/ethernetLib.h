@@ -71,10 +71,8 @@ void initHttpSocket(osThreadId* thread_id);
 void httpStartListen(void);
 HttpRequestType getRequestType(char* fullMsg);
 int32_t getHttpSocket(void);
-/*err_t sendConfiguration(StmConfig* config, struct netconn* client,
-		char* requestParameters);*/
-netStatus sendHttpResponse(int32_t socket, char* httpStatus,
-		char* requestParameters, char* content);
+netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters);
+netStatus sendHttpResponse(int32_t socket, char* httpStatus, char* requestParameters, char* content);
 netStatus sendString(int32_t socket, const char* array);
 uint8_t isConfigRequest(char* buf);
 uint8_t isSystemRequest(char* buf);

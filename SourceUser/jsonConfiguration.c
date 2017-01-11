@@ -63,9 +63,9 @@ void stmConfigToString(StmConfig* config, char* str) {
 	cJSON_AddStringToObject(jsonCreator, "UdpEndpointIP", ip);*/
 
 	json = cJSON_Print(jsonCreator);
+	logMsg(json);
 	strcpy(str, json);
 	cJSON_Delete(jsonCreator);
-	free(json);
 }
 
 /**

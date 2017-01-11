@@ -7,7 +7,7 @@
 
 #include "usrTasks.h"
 
-//StmConfig configStr;
+StmConfig configStr;
 
 /**
  * @var SoundBuffer* mainSoundBuffer
@@ -47,7 +47,7 @@ osThreadDef(streamingTask, osPriorityRealtime, 1,
 
 osThreadId httpConfigTaskHandle;
 osThreadDef(httpConfigTask, osPriorityHigh, 1,
-		20*MINIMAL_STACK_SIZE);
+		25*MINIMAL_STACK_SIZE);
 
 osThreadId ethernetTaskHandle;
 osThreadDef(ethernetTask, osPriorityNormal, 1,
@@ -149,15 +149,14 @@ void initTask(void const * argument) {
 
 	/* Global variables */
 	logMsg("Preparing global variables");
-	//configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
-	//configStr.audioSamplingFrequency = 44100;
-	//configStr.clientPort = UDP_STREAMING_PORT;
+	configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
+	configStr.audioSamplingFrequency = 44100;
+	configStr.clientPort = UDP_STREAMING_PORT;
 	//strcpy(configStr.clientIp, UDP_STREAMING_IP);
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
 	mainSoundBuffer->iterator = 0;
-	//mainSoundBuffer->frequency = configStr.audioSamplingFrequency;
-	mainSoundBuffer->frequency = 44100;
+	mainSoundBuffer->frequency = configStr.audioSamplingFrequency;
 	mainSoundBuffer->size = MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE;
 	for (i = 0; i < mainSoundBuffer->size; i++) {
 		mainSoundBuffer->soundBuffer[i] = 0;
@@ -183,8 +182,7 @@ void initTask(void const * argument) {
 		printNullHandle("HTTP task");
 
 	logMsg("Preparing audio recording");
-	//if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
-	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, 44100) != AUDIO_RECORDER_OK) {
+	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
 		logErr("Audio rec init");
 	}
 
@@ -204,7 +202,6 @@ void initTask(void const * argument) {
 void ethernetTask(void const * argument) {
 	uint32_t status;
 	
-	osDelay(5000);
 	printIp();
 	printNetmask();
 	printGateway();
@@ -241,8 +238,7 @@ void audioRecorder_FullBufferFilled(void) {
 	}
 	else
 	{
-		//audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
-		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, 44100);
+		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
 
 		// sending mail to queue
 		mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
@@ -402,10 +398,10 @@ void streamingTask(void const * argument) {
 	while (1) {
 		// setting signal to start sound processing
 		status = osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
-		//osDelay(configStr.amplitudeSamplingDelay);
+		
 		if(netStatusVal == netOK)
 		{
-			osDelay(10);
+			osDelay(configStr.amplitudeSamplingDelay);
 		}
 		else
 		{
@@ -416,12 +412,10 @@ void streamingTask(void const * argument) {
 		status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
 		if (status == osOK) {
 				// "connecting" to UDP
-				//openStreamingSocket(configStr.clientPort);
-				openStreamingSocket(53426);
+				openStreamingSocket(configStr.clientPort);
 				
 				// sending main spectrum buffer by UDP
-				//netStatusVal = sendSpectrum(mainSpectrumBuffer, configStr.clientIp, configStr.clientPort);
-				netStatusVal = sendSpectrum(mainSpectrumBuffer, "IP", 53426);
+				netStatusVal = sendSpectrum(mainSpectrumBuffer, "IP", configStr.clientPort);
 				if(netStatusVal != netOK) {
 					logErrVal("Net status ", netStatusVal);
 				}
@@ -447,14 +441,16 @@ void httpConfigTask(void const* argument) {
 		event = osSignalWait(GET_REQUEST_SIGNAL, osWaitForever);
 		if (event.status == osOK || event.status == osEventSignal)
 		{
-			osDelay(100);
+			// waiting for finish the socket interrupt
+			osDelay(1);
 			
 			httpSocket = getHttpSocket();
 			getData(data);
 			
 			if(isConfigRequest(data))
 			{
-				sendHttpResponse(httpSocket, "200 OK", "\r\nConnection: Closed\r\nContent-Type: application/json", "<h1>OK</h1>");
+				sendHttpResponse(httpSocket, "200 OK", "\r\nConnection: Closed\r\nContent-Type: text/html", "<h1>OK</h1>");
+				//sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
 			}
 			else if(isSystemRequest(data))
 			{
