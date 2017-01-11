@@ -45,3 +45,24 @@ void copyConfig(StmConfig* destination, StmConfig* source) {
 	strcpy(destination->clientIp, source->clientIp);
 	destination->clientPort = source->clientPort;
 }
+
+void showDifferences(StmConfig* newConfig, StmConfig* oldConfig) {
+	char msg[30];
+	if(newConfig->amplitudeSamplingDelay != oldConfig->amplitudeSamplingDelay)
+	{
+		logMsgVal("New sampling delay ", newConfig->amplitudeSamplingDelay);
+	}
+	if(newConfig->audioSamplingFrequency != oldConfig->audioSamplingFrequency)
+	{
+		logMsgVal("New frequency ", newConfig->audioSamplingFrequency);
+	}
+	if(newConfig->clientPort != oldConfig->clientPort)
+	{
+		logMsgVal("New client port ", newConfig->clientPort);
+	}
+	if(strcmp(newConfig->clientIp, oldConfig->clientIp))
+	{
+		sprintf(msg, "New IP: %s", newConfig->clientIp);
+		logMsg(msg);
+	}
+}

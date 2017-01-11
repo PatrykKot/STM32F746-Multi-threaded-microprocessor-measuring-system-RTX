@@ -492,7 +492,14 @@ void httpConfigTask(void const* argument) {
 						
 						getData(data);
 						parseJSON(data, &tempConfig);
-						logMsgVal("Got freq ", tempConfig.audioSamplingFrequency);
+						
+						showDifferences(&tempConfig, &configStr);
+						if(tempConfig.audioSamplingFrequency != configStr.audioSamplingFrequency)
+						{
+							audioRecorderSetSamplingFrequency(tempConfig.audioSamplingFrequency);
+						}
+						
+						copyConfig(&configStr, &tempConfig);
 						sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
 					}
 					else
