@@ -194,6 +194,11 @@ int32_t getHttpSocket() {
 	return httpSocketHandle;
 }
 
+void closeSocket(int32_t socket)
+{
+	tcp_close(socket);
+}
+
 /**
  * @brief Sens the device configuration to the client
  * @param config: pointer to \ref StmConfig structure

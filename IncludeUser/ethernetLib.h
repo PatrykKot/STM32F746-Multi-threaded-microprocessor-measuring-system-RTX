@@ -71,6 +71,7 @@ void initHttpSocket(osThreadId* thread_id);
 void httpStartListen(void);
 HttpRequestType getRequestType(char* fullMsg);
 int32_t getHttpSocket(void);
+void closeSocket(int32_t socket);
 netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters);
 netStatus sendHttpResponse(int32_t socket, char* httpStatus, char* requestParameters, char* content);
 netStatus sendString(int32_t socket, const char* array);

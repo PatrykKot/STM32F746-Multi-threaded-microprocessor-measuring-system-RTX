@@ -449,19 +449,18 @@ void httpConfigTask(void const* argument) {
 			
 			if(isConfigRequest(data))
 			{
-				sendHttpResponse(httpSocket, "200 OK", "\r\nConnection: Closed\r\nContent-Type: text/html", "<h1>OK</h1>");
-				//sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
+				sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
 			}
 			else if(isSystemRequest(data))
 			{
-				sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
+				sendHttpResponse(httpSocket, "501 Not Implemented","\r\nContent-Type: text/html", "<h1>System info not supported on RTX</h1>");
 			}
 			else
 			{
-				sendHttpResponse(httpSocket, "404 Not Found","\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
+				sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
 			}
 			
-			tcp_close(httpSocket);
+			closeSocket(httpSocket);
 		}
 	}
 }

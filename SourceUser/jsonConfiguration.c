@@ -7,6 +7,8 @@
 
 #include "jsonConfiguration.h"
 
+static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d}";
+
 /**
  * @brief Parses \netbuf (JSON data) to \StmConfig structure
  */
@@ -43,29 +45,7 @@
  * @param str: pointer to output of the JSON string (must have allocated memory)
  */
 void stmConfigToString(StmConfig* config, char* str) {
-	cJSON *jsonCreator;
-	char* json;
-		
-	jsonCreator = cJSON_CreateObject();
-	/*cJSON_AddBoolToObject(jsonCreator, "Started", config->started);*/
-	cJSON_AddNumberToObject(jsonCreator, "UdpEndpointPort", config->clientPort);
-	cJSON_AddNumberToObject(jsonCreator, "AmplitudeSamplingDelay",
-			config->amplitudeSamplingDelay);
-	cJSON_AddNumberToObject(jsonCreator, "SamplingFrequency",
-			config->audioSamplingFrequency);
-
-	/*char ip[15];
-	int ipTab[4];
-	for (uint8_t i = 0; i < 4; i++) {
-		ipTab[i] = IP_ADDR_GET(config->clientIp, i);
-	}
-	sprintf(ip, "%d.%d.%d.%d", ipTab[0], ipTab[1], ipTab[2], ipTab[3]);
-	cJSON_AddStringToObject(jsonCreator, "UdpEndpointIP", ip);*/
-
-	json = cJSON_Print(jsonCreator);
-	logMsg(json);
-	strcpy(str, json);
-	cJSON_Delete(jsonCreator);
+	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency);
 }
 
 /**
