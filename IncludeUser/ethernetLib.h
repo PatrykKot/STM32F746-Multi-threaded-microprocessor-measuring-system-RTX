@@ -50,7 +50,7 @@
 /**
  *
  */
-#define UDP_STREAMING_FAILURE_TIMEOUT 1000
+#define UDP_STREAMING_FAILURE_TIMEOUT 3000
 
 /* Functions */
 void ethInit(void);

@@ -1,13 +1,13 @@
 /*
  * jsonConfiguration.c
  *
- *  Created on: 5 paŸ 2016
+ *  Created on: 5 paz 2016
  *      Author: Patryk Kotlarz
  */
 
 #include "jsonConfiguration.h"
 
-static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d}";
+static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\"}";
 
 /**
  * @brief Parses \netbuf (JSON data) to \StmConfig structure
@@ -45,7 +45,7 @@ static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingD
  * @param str: pointer to output of the JSON string (must have allocated memory)
  */
 void stmConfigToString(StmConfig* config, char* str) {
-	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency);
+	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp);
 }
 
 /**
@@ -56,11 +56,6 @@ void stmConfigToString(StmConfig* config, char* str) {
 void copyConfig(StmConfig* destination, StmConfig* source) {
 	destination->amplitudeSamplingDelay = source->amplitudeSamplingDelay;
 	destination->audioSamplingFrequency = source->audioSamplingFrequency;
-	//destination->clientIp.addr = source->clientIp.addr;
+	strcpy(destination->clientIp, source->clientIp);
 	destination->clientPort = source->clientPort;
-
-	/*destination->started = source->started;
-	 for (uint16_t i = 0; i < 4; i++)
-	 destination->udpEndpointAddr[i] = source->udpEndpointAddr[i];
-	 destination->udpEndpointPort = source->udpEndpointPort;*/
 }

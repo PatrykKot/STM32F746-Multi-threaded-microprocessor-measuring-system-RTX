@@ -27,7 +27,7 @@
 typedef struct {
 	uint8_t amplitudeSamplingDelay;
 	uint32_t audioSamplingFrequency;
-	//char clientIp[20];
+	char clientIp[20];
 	uint32_t clientPort;
 } StmConfig;
 

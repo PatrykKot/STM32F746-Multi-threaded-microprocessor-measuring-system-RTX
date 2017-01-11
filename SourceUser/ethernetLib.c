@@ -76,9 +76,11 @@ void openStreamingSocket(uint32_t port) {
 }
 
 netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port) {
-	const uint8_t ip[4] = {192,168,1,10};
+	uint8_t ip[4];
 	uint8_t* buff;
 	uint32_t length;
+	
+	sscanf(ipAddress, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	
 	length = ETHERNET_AMP_BUFFER_SIZE * sizeof(float32_t);	
 	buff = udp_get_buf(length);
@@ -119,35 +121,33 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
 	request = (char*)buf;
   switch (event) {
     case tcpEventConnect:
-			logMsg("New connection");
+			//logMsg("New connection");
       return (1);
     case tcpEventAbort:
-      logErr("Connection aborted");
+      //logErr("Connection aborted");
       break;
     case tcpEventEstablished:
-      logMsg("Connected to peer"); 
+      //logMsg("Connected to peer"); 
       break;
     case tcpEventClosed:
-      logMsg("Connection closed");
+      //logMsg("Connection closed");
       break;
     case tcpEventACK:
-      logMsg("Event ACK");
+      //logMsg("Event ACK");
       break;
     case tcpEventData:
-      logMsg("Event data");
+      //logMsg("Event data");
 			requestType = getRequestType(request);
 			switch(requestType)
 			{
 				case GET_REQUEST:
 				{
-					logMsg("GET request");
 					strcpy(httpData, request);
 					osSignalSet(*httpThreadHandle, GET_REQUEST_SIGNAL);
 					break;
 				}
 				case PUT_REQUEST:
 				{
-					logMsg("PUT request");
 					strcpy(httpData, request);
 					osSignalSet(*httpThreadHandle, PUT_REQUEST_SIGNAL);
 					break;
@@ -208,7 +208,6 @@ void closeSocket(int32_t socket)
 netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters) {
 	char configContent[256];
 	stmConfigToString(config, configContent);
-	logMsg(configContent);
 	return sendHttpResponse(client, "200 OK", requestParameters, configContent);
 }
 

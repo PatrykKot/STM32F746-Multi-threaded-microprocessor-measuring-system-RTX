@@ -150,9 +150,9 @@ void initTask(void const * argument) {
 	/* Global variables */
 	logMsg("Preparing global variables");
 	configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
-	configStr.audioSamplingFrequency = 44100;
+	configStr.audioSamplingFrequency = AUDIO_RECORDER_DEFAULT_FREQUENCY;
 	configStr.clientPort = UDP_STREAMING_PORT;
-	//strcpy(configStr.clientIp, UDP_STREAMING_IP);
+	strcpy(configStr.clientIp, UDP_STREAMING_IP);
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
 	mainSoundBuffer->iterator = 0;
@@ -415,7 +415,7 @@ void streamingTask(void const * argument) {
 				openStreamingSocket(configStr.clientPort);
 				
 				// sending main spectrum buffer by UDP
-				netStatusVal = sendSpectrum(mainSpectrumBuffer, "IP", configStr.clientPort);
+				netStatusVal = sendSpectrum(mainSpectrumBuffer, configStr.clientIp, configStr.clientPort);
 				if(netStatusVal != netOK) {
 					logErrVal("Net status ", netStatusVal);
 				}
@@ -449,14 +449,17 @@ void httpConfigTask(void const* argument) {
 			
 			if(isConfigRequest(data))
 			{
+				logMsg("Config request");
 				sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
 			}
 			else if(isSystemRequest(data))
 			{
+				logErr("System request");
 				sendHttpResponse(httpSocket, "501 Not Implemented","\r\nContent-Type: text/html", "<h1>System info not supported on RTX</h1>");
 			}
 			else
 			{
+				logErr("404 Not Found");
 				sendHttpResponse(httpSocket, "404 Not Found", "\r\nContent-Type: text/html", "<h1>404 Not Found</h1>");
 			}
 			

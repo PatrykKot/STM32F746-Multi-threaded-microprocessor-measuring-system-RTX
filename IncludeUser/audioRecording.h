@@ -27,6 +27,8 @@
  */
 #define AUDIO_RECORDER_INPUT_LINE ((uint16_t)0x0300)
 
+#define AUDIO_RECORDER_DEFAULT_FREQUENCY 44100
+
 /**
  * @def AUDIO_RECORDER_OK
  * @brief No errors
