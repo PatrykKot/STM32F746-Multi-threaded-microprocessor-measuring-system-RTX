@@ -20,9 +20,13 @@ int main(void) {
 	/* Setting the system clock */
 	SystemClock_Config();
 
+	/* Setting the system kernel */
 	osKernelInitialize();
+	
+	/* Thread initialization */
 	threadsInit();
 	
+	/* Start system kernal */
 	osKernelStart();
 
 	while (1)

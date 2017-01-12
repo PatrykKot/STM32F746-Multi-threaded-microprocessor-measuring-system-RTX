@@ -20,7 +20,7 @@
  * @def ETHERNET_AMP_BUFFER_SIZE
  * @brief Amplitude data length sent to PC
  */
-#define ETHERNET_AMP_BUFFER_SIZE 256
+#define ETHERNET_DEFAULT_AMP_BUFFER_SIZE 256
 
 /**
  * HTTP request types
@@ -64,8 +64,8 @@ void printGateway(void);
 uint32_t streamingSocketCallback(int32_t socket, const uint8_t *ip_addr, uint16_t port, const uint8_t *buf, uint32_t len);
 void initStreamingSocket(void);
 void openStreamingSocket(uint32_t port);
+netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port, uint32_t dataSize);
 void getData(char* data);
-netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port);
 void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength);
 void closeStreamingSocket(void);
 

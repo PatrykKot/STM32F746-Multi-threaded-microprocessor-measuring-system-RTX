@@ -75,17 +75,17 @@ void openStreamingSocket(uint32_t port) {
 	udp_open(streamingSocketHandle, port);
 }
 
-netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port) {
+netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port, uint32_t dataSize) {
 	uint8_t ip[4];
 	uint8_t* buff;
 	uint32_t length;
 	
 	sscanf(ipAddress, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	
-	length = ETHERNET_AMP_BUFFER_SIZE * sizeof(float32_t);	
+	length = dataSize * sizeof(float32_t);	
 	buff = udp_get_buf(length);
 	
-	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, ETHERNET_AMP_BUFFER_SIZE);
+	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, dataSize);
 	
 	return udp_send(streamingSocketHandle, ip, port, buff, length);
 }
