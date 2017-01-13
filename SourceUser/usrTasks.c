@@ -11,7 +11,7 @@
  * @var StmConfig configStr
  * @brief System configuration structure
 **/
-StmConfig configStr;
+StmConfig* configStr;
 
 /**
  * @var SoundBuffer* mainSoundBuffer
@@ -38,7 +38,7 @@ osThreadDef(initTask, osPriorityNormal, 1,
 		
 #ifdef LCD_PRINTER_SUPPORT
 osThreadId lcdTaskHandle;
-osThreadDef(lcdTask, osPriorityNormal, 1, MINIMAL_STACK_SIZE);
+osThreadDef(lcdTask, osPriorityLow, 1, MINIMAL_STACK_SIZE);
 #endif
 
 osThreadId samplingTaskHandle;
@@ -46,19 +46,19 @@ osThreadDef(samplingTask, osPriorityRealtime, 1,
 		2*MINIMAL_STACK_SIZE);
 
 osThreadId streamingTaskHandle;
-osThreadDef(streamingTask, osPriorityRealtime, 1,
-		15*MINIMAL_STACK_SIZE);
+osThreadDef(streamingTask, osPriorityHigh, 1,
+		20*MINIMAL_STACK_SIZE);
 
 osThreadId httpConfigTaskHandle;
-osThreadDef(httpConfigTask, osPriorityHigh, 1,
-		25*MINIMAL_STACK_SIZE);
+osThreadDef(httpConfigTask, osPriorityNormal, 1,
+		35*MINIMAL_STACK_SIZE);
 
 osThreadId ethernetTaskHandle;
 osThreadDef(ethernetTask, osPriorityNormal, 1,
-		20*MINIMAL_STACK_SIZE);
+		30*MINIMAL_STACK_SIZE);
 
 osThreadId soundProcessingTaskHandle;
-osThreadDef(soundProcessingTask, osPriorityHigh, 1,
+osThreadDef(soundProcessingTask, osPriorityNormal, 1,
 		195*MINIMAL_STACK_SIZE);
 
 /* Memory pool handlers */
@@ -70,6 +70,8 @@ osPoolDef(cfftPool, 1, arm_cfft_instance_f32);
 osPoolId cfftPool_id;
 osPoolDef(soundProcessingBufferPool, 1, float32_t[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE]);
 osPoolId soundProcessingBufferPool_id;
+osPoolDef(stmConfigBufferPool, 1, StmConfig);
+osPoolId stmConfigBufferPool_id;
 
 /* Mail queue handler */
 osMailQDef(dmaAudioMail_q, MAXIMUM_DMA_AUDIO_MESSAGE_QUEUE_SIZE, SoundMailStr);
@@ -78,10 +80,6 @@ osMailQId dmaAudioMail_q_id;
 /* Mutex handlers */
 osMutexDef(mainSpectrumBufferMutex);
 osMutexId mainSpectrumBufferMutex_id;
-
-osMutexDef(ethernetInterfaceMutex);
-osMutexId ethernetInterfaceMutex_id;
-
 osMutexDef(mainSoundBufferMutex);
 osMutexId mainSoundBufferMutex_id;
 
@@ -132,6 +130,9 @@ void initTask(void const * argument) {
 	soundBufferPool_id = osPoolCreate(osPool(soundBufferPool));
 	if (soundBufferPool_id == NULL)
 		printNullHandle("Sound pool");
+	stmConfigBufferPool_id = osPoolCreate(osPool(stmConfigBufferPool));
+	if (stmConfigBufferPool_id == NULL)
+		printNullHandle("StmConfig pool");
 
 	logMsg("Initializing mail queues");
 	dmaAudioMail_q_id = osMailCreate(osMailQ(dmaAudioMail_q), NULL);
@@ -146,24 +147,20 @@ void initTask(void const * argument) {
 	mainSoundBufferMutex_id = osMutexCreate(osMutex(mainSoundBufferMutex));
 	if (mainSoundBufferMutex_id == NULL)
 		printNullHandle("Audio mut");
-	ethernetInterfaceMutex_id = osMutexCreate(osMutex(ethernetInterfaceMutex));
-	if (ethernetInterfaceMutex_id == NULL)
-		printNullHandle("Eth mut");
 
 	/* Global variables */
 	logMsg("Preparing global variables");
-	configStr.amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
-	configStr.audioSamplingFrequency = AUDIO_RECORDER_DEFAULT_FREQUENCY;
-	configStr.clientPort = UDP_STREAMING_PORT;
-	strcpy(configStr.clientIp, UDP_STREAMING_IP);
-	//configStr.audioVolume = AUDIO_RECORDER_VOLUME_0DB;
-	//configStr.systemStarted = TRUE;
-	configStr.ethernetDataSize = ETHERNET_DEFAULT_AMP_BUFFER_SIZE;
+	configStr = osPoolCAlloc(stmConfigBufferPool_id);
+	configStr->amplitudeSamplingDelay = CONNECTION_TASK_DELAY_TIME;
+	configStr->audioSamplingFrequency = AUDIO_RECORDER_DEFAULT_FREQUENCY;
+	configStr->clientPort = UDP_STREAMING_PORT;
+	strcpy(configStr->clientIp, UDP_STREAMING_IP);
+	configStr->ethernetDataSize = ETHERNET_DEFAULT_AMP_BUFFER_SIZE;
 	
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
 	mainSoundBuffer->iterator = 0;
-	mainSoundBuffer->frequency = configStr.audioSamplingFrequency;
+	mainSoundBuffer->frequency = configStr->audioSamplingFrequency;
 	mainSoundBuffer->size = MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE;
 	for (i = 0; i < mainSoundBuffer->size; i++) {
 		mainSoundBuffer->soundBuffer[i] = 0;
@@ -181,16 +178,9 @@ void initTask(void const * argument) {
 	samplingTaskHandle = osThreadCreate(osThread(samplingTask), NULL);
 	if (samplingTaskHandle == NULL)
 		printNullHandle("Samp task");
-	streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
-	if (streamingTaskHandle == NULL)
-		printNullHandle("Stream task");
-	httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
-	if (httpConfigTaskHandle == NULL)
-		printNullHandle("HTTP task");
-
+	
 	logMsg("Preparing audio recording");
-	//if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, configStr.audioVolume, configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
-	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, configStr.audioSamplingFrequency) != AUDIO_RECORDER_OK) {
+	if (audioRecorderInit(AUDIO_RECORDER_INPUT_MICROPHONE, AUDIO_RECORDER_VOLUME_0DB, configStr->audioSamplingFrequency) != AUDIO_RECORDER_OK) {
 		logErr("Audio rec init");
 	}
 
@@ -199,6 +189,13 @@ void initTask(void const * argument) {
 	AUDIO_BUFFER_SIZE) != AUDIO_RECORDER_OK) {
 		logErr("Audio buffer start");
 	}
+	
+	streamingTaskHandle = osThreadCreate(osThread(streamingTask), NULL);
+	if (streamingTaskHandle == NULL)
+		printNullHandle("Stream task");
+	httpConfigTaskHandle = osThreadCreate(osThread(httpConfigTask), NULL);
+	if (httpConfigTaskHandle == NULL)
+		printNullHandle("HTTP task");
 	
 	logMsg("Terminating init");
 	osThreadTerminate(initTaskHandle);
@@ -246,7 +243,7 @@ void audioRecorder_FullBufferFilled(void) {
 	}
 	else
 	{
-		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, configStr.audioSamplingFrequency);
+		audioRecordingSoundMailFill(soundSamples, dmaAudioBuffer, AUDIO_BUFFER_SIZE, configStr->audioSamplingFrequency);
 
 		// sending mail to queue
 		mailStatus = osMailPut(dmaAudioMail_q_id, soundSamples);
@@ -399,39 +396,34 @@ void lcdTask(void const * argument) {
  * @brief Spectrum UDP streaming
  */
 void streamingTask(void const * argument) {
-	int32_t status;
 	netStatus netStatusVal;
 	
 	initStreamingSocket();	
 	
 	while (1) {	
 		// setting signal to start sound processing
-		status = osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
+		osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
 		
 		if(netStatusVal == netOK)
 		{
-			osDelay(configStr.amplitudeSamplingDelay);
+			osDelay(configStr->amplitudeSamplingDelay);
 		}
 		else
 		{
 			osDelay(UDP_STREAMING_FAILURE_TIMEOUT);
 		}
 		
-		// waiting for acces to ethernet interface
-		status = osMutexWait(ethernetInterfaceMutex_id, osWaitForever);
-		if (status == osOK) {
-			// "connecting" to UDP	
-			openStreamingSocket(configStr.clientPort);
+		// "connecting" to UDP	
+		openStreamingSocket(configStr);
 			
-			// sending main spectrum buffer by UDP
-			
-			netStatusVal = sendSpectrum(mainSpectrumBuffer, configStr.clientIp, configStr.clientPort, configStr.ethernetDataSize);
-			if(netStatusVal != netOK) {
-				logErrVal("Net status ", netStatusVal);
-			}
-				
-			closeStreamingSocket();
+		// sending main spectrum buffer by UDP
+		
+		netStatusVal = sendSpectrum(mainSpectrumBuffer, configStr);
+		if(netStatusVal != netOK) {
+			logErrVal("Net status ", netStatusVal);
 		}
+				
+		closeStreamingSocket();
 	}
 }
 
@@ -468,7 +460,7 @@ void httpConfigTask(void const* argument) {
 					if(isConfigRequest(data))
 					{
 						logMsg("Config request");
-						sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
+						sendConfiguration(configStr, httpSocket, "\r\nConnection: Closed");
 					}
 					else if(isSystemRequest(data))
 					{
@@ -494,6 +486,7 @@ void httpConfigTask(void const* argument) {
 					getData(data);
 					httpSocket = getHttpSocket();
 					
+					osSignalClear(httpConfigTaskHandle, HTTP_DATA_WAITING_TIMEOUT);
 					event = osSignalWait(HTTP_DATA_SIGNAL, HTTP_DATA_WAITING_TIMEOUT);
 					if (event.status == osEventSignal && event.value.signals == HTTP_DATA_SIGNAL)
 					{
@@ -502,14 +495,16 @@ void httpConfigTask(void const* argument) {
 						
 						getData(data);
 						parseJSON(data, &tempConfig);
-						makeChanges(&tempConfig, &configStr);
+						makeChanges(&tempConfig, configStr);
 						
-						copyConfig(&configStr, &tempConfig);
-						sendConfiguration(&configStr, httpSocket, "\r\nConnection: Closed");
+						copyConfig(configStr, &tempConfig);
+						sendConfiguration(configStr, httpSocket, "\r\nConnection: Closed");
 					}
 					else
 					{
 						logErr("Didn't get PUT data");
+						logErrVal("Status ", event.status);
+						logErrVal("Signal ", event.value.signals);
 					}
 					
 					closeSocket(httpSocket);
@@ -517,7 +512,7 @@ void httpConfigTask(void const* argument) {
 				}
 				default:
 				{
-					closeSocket(getHttpSocket());
+					closeSocket(httpSocket);
 					break;
 				}
 			}

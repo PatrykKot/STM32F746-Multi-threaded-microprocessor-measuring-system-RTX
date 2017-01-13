@@ -54,7 +54,7 @@
  
 #define HTTP_REQUEST_WAITING_TIMEOUT 5
  
-#define HTTP_DATA_WAITING_TIMEOUT 100
+#define HTTP_DATA_WAITING_TIMEOUT 1000
 
 /* Functions */
 void ethInit(void);
@@ -63,8 +63,8 @@ void printNetmask(void);
 void printGateway(void);
 uint32_t streamingSocketCallback(int32_t socket, const uint8_t *ip_addr, uint16_t port, const uint8_t *buf, uint32_t len);
 void initStreamingSocket(void);
-void openStreamingSocket(uint32_t port);
-netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port, uint32_t dataSize);
+void openStreamingSocket(StmConfig* config);
+netStatus sendSpectrum(SpectrumStr* spectrumStr, StmConfig* config);
 void getData(char* data);
 void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength);
 void closeStreamingSocket(void);

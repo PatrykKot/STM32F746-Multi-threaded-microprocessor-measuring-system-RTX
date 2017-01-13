@@ -71,23 +71,23 @@ void initStreamingSocket() {
 	streamingSocketHandle = udp_get_socket (0, 0, streamingSocketCallback);
 }
 
-void openStreamingSocket(uint32_t port) {
-	udp_open(streamingSocketHandle, port);
+void openStreamingSocket(StmConfig* config) {
+	udp_open(streamingSocketHandle, config->clientPort);
 }
 
-netStatus sendSpectrum(SpectrumStr* spectrumStr, char* ipAddress, uint32_t port, uint32_t dataSize) {
+netStatus sendSpectrum(SpectrumStr* spectrumStr, StmConfig* config) {
 	uint8_t ip[4];
 	uint8_t* buff;
 	uint32_t length;
 	
-	sscanf(ipAddress, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
+	sscanf(config->clientIp, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	
-	length = dataSize * sizeof(float32_t);	
+	length = config->ethernetDataSize * sizeof(float32_t);	
 	buff = udp_get_buf(length);
 	
-	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, dataSize);
+	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, config->ethernetDataSize);
 	
-	return udp_send(streamingSocketHandle, ip, port, buff, length);
+	return udp_send(streamingSocketHandle, ip, config->clientPort, buff, length);
 }
 
 void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength) {
@@ -137,24 +137,30 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
       break;
     case tcpEventData:
 		{
-      //logMsg("Event data");
+      logMsg("Event data");
 			requestType = getRequestType(request);
 			switch(requestType)
 			{
 				case GET_REQUEST:
 				{
+					logMsg("GET");
+					logMsg(request);
 					strcpy(httpData, request);
 					osSignalSet(*httpThreadHandle, GET_REQUEST_SIGNAL);
 					break;
 				}
 				case PUT_REQUEST:
 				{
+					logMsg("PUT");
+					logMsg(request);
 					strcpy(httpData, request);
 					osSignalSet(*httpThreadHandle, PUT_REQUEST_SIGNAL);
 					break;
 				}
 				default:
 				{
+					logMsg("DATA");
+					logMsg(request);
 					strcpy(httpData, request);
 					osSignalSet(*httpThreadHandle, HTTP_DATA_SIGNAL);
 					break;
