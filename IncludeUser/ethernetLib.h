@@ -55,9 +55,12 @@
 #define HTTP_REQUEST_WAITING_TIMEOUT 5
  
 #define HTTP_DATA_WAITING_TIMEOUT 1000
+ 
+#define ETHERNET_NOT_CONNECTED_DELAY 100
 
 /* Functions */
 void ethInit(void);
+uint8_t isEthernetConnected(void);
 void printIp(void);
 void printNetmask(void);
 void printGateway(void);

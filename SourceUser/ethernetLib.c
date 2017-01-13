@@ -9,6 +9,7 @@
 
 extern  LOCALM localm[];
 #define LocM   localm[NETIF_ETH]
+uint8_t ethernetConnected = 0;
 
 static uint32_t streamingSocketHandle;
 static uint32_t httpSocketHandle;
@@ -31,14 +32,21 @@ void ethInit(void) {
 	net_initialize();
 }
 
+uint8_t isEthernetConnected()
+{
+	return ethernetConnected;
+}
+
 void eth_link_notify(uint32_t if_num, ethLinkEvent event)
 {
 	if(event != ethLinkDown)
 	{
+		ethernetConnected = 1;
 		logMsg("Ethernet link up");
 	}
 	else
 	{
+		ethernetConnected = 0;
 		logMsg("Ethernet link down");
 	}
 }

@@ -401,6 +401,11 @@ void streamingTask(void const * argument) {
 	initStreamingSocket();	
 	
 	while (1) {	
+		while(!isEthernetConnected())
+		{
+			osDelay(ETHERNET_NOT_CONNECTED_DELAY);
+		}
+		
 		// setting signal to start sound processing
 		osSignalSet(soundProcessingTaskHandle, START_SOUND_PROCESSING_SIGNAL);
 		
