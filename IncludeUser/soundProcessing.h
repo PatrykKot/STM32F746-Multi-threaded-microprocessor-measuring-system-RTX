@@ -31,6 +31,12 @@ typedef struct {
 	float32_t frequencyResolution;
 } SpectrumStr;
 
+typedef enum {
+	UNDEFINED = 0,
+	RECTANGLE = 1,
+	TRIANGLE = 2
+} WindowType;
+
 /**
  * @brief SingleFreqStr structure (amplitude value and frequency)
  */

@@ -7,12 +7,13 @@
 
 #include "jsonConfiguration.h"
 
-static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\",\"UdpDataSize\":%d}";
+static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\",\"UdpDataSize\":%d,\"WindowType\":\"%s\"}";
 
 /**
  * @brief Parses JSON data to \StmConfig structure
  */
 void parseJSON(char* jsonData, StmConfig* config) {
+	char windowTypeStr[20];
 	cJSON* parser = cJSON_Parse(jsonData);
 	
 	config->amplitudeSamplingDelay = 0;
@@ -20,6 +21,7 @@ void parseJSON(char* jsonData, StmConfig* config) {
 	strcpy(config->clientIp, "");
 	config->clientPort = 0;
 	config->ethernetDataSize = 0;
+	config->windowType = UNDEFINED;
 	
 	if(cJSON_HasObjectItem(parser,"UdpEndpointIP"))
 	{
@@ -45,6 +47,20 @@ void parseJSON(char* jsonData, StmConfig* config) {
 	{
 		config->ethernetDataSize = cJSON_GetObjectItem(parser, "UdpDataSize")->valueint;
 	}
+	
+	if(cJSON_HasObjectItem(parser,"WindowType"))
+	{
+		strcpy(windowTypeStr, cJSON_GetObjectItem(parser, "WindowType")->valuestring);
+		
+		if(strcmp(windowTypeStr, "RECTANGLE"))
+		{
+			config->windowType = RECTANGLE;
+		}
+		else if (strcmp(windowTypeStr, "TRIANGLE"))
+		{
+			config->windowType = TRIANGLE;
+		}
+	}
 
 	cJSON_Delete(parser);
 }
@@ -55,7 +71,27 @@ void parseJSON(char* jsonData, StmConfig* config) {
  * @param str: pointer to output of the JSON string (must have allocated memory)
  */
 void stmConfigToString(StmConfig* config, char* str) {
-	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp, config->ethernetDataSize);
+	char windowTypeStr[20];
+	
+	switch(config->windowType)
+	{
+		case RECTANGLE:
+		{
+			strcpy(windowTypeStr, "RECTANGLE");
+			break;
+		}
+		case TRIANGLE:
+		{
+			strcpy(windowTypeStr, "RECTANGLE");
+			break;
+		}
+		default:
+		{
+			strcpy(windowTypeStr, "UNDEFINED");
+			break;
+		}
+	}
+	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp, config->ethernetDataSize, windowTypeStr);
 }
 
 /**
@@ -88,6 +124,11 @@ void copyConfig(StmConfig* destination, StmConfig* source) {
 	{
 		destination->ethernetDataSize = source->ethernetDataSize;
 	}
+	
+	if(source->windowType > UNDEFINED && source->windowType <= TRIANGLE)
+	{
+		destination->windowType = source->windowType;
+	}
 		
 }
 
@@ -119,5 +160,27 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 	if(newConfig->ethernetDataSize != oldConfig->ethernetDataSize && newConfig->ethernetDataSize != 0)
 	{
 		logMsgVal("Changed UDP data size ", newConfig->ethernetDataSize);
+	}
+	
+	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= TRIANGLE)
+	{
+		switch(newConfig->windowType)
+		{
+			case RECTANGLE:
+			{
+				logMsg("Changed window RECTANGLE");
+				break;
+			}
+			case TRIANGLE:
+			{
+				logMsg("Changed window TRIANGLE");
+				break;
+			}
+			default:
+			{
+				logErr("Unknown window");
+				break;
+			}
+		}
 	}
 }

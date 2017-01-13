@@ -156,6 +156,7 @@ void initTask(void const * argument) {
 	configStr->clientPort = UDP_STREAMING_PORT;
 	strcpy(configStr->clientIp, UDP_STREAMING_IP);
 	configStr->ethernetDataSize = ETHERNET_DEFAULT_AMP_BUFFER_SIZE;
+	configStr->windowType = RECTANGLE;
 	
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);

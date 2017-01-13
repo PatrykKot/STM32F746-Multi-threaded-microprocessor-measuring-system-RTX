@@ -82,6 +82,7 @@ void closeSocket(int32_t socket);
 netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters);
 netStatus sendHttpResponse(int32_t socket, char* httpStatus, char* requestParameters, char* content);
 netStatus sendString(int32_t socket, const char* array);
+
 uint8_t isConfigRequest(char* buf);
 uint8_t isSystemRequest(char* buf);
 
