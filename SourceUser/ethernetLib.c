@@ -14,7 +14,7 @@ uint8_t ethernetConnected = 0;
 static uint32_t streamingSocketHandle;
 static uint32_t httpSocketHandle;
 
-static char* httpData;
+static char httpData[1024];
 static osThreadId* httpThreadHandle;
 
 union FloatConversion {

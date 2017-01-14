@@ -144,11 +144,11 @@ static float32_t calcHann(uint32_t index, uint32_t length)
 	return (float32_t)0.5*((float32_t)1-arm_cos_f32((float32_t)(2*PI*index)/(float32_t)(length-1)));
 }
 
-static const float32_t floatTopTable[] = {1, 1.93, 1.29, 0.388, 0.028};
+static const float32_t flatTopTable[] = {0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368};
 
 static float32_t calcFlatTop(uint32_t index, uint32_t length)
 {
-	return floatTopTable[0] - floatTopTable[1] * arm_cos_f32((float32_t)(2*PI*index)/(float32_t)(length-1)) + floatTopTable[2] * arm_cos_f32((float32_t)(4*PI*index)/(float32_t)(length-1)) - floatTopTable[3] * arm_cos_f32((float32_t)(6*PI*index)/(float32_t)(length-1)) + floatTopTable[4] * arm_cos_f32((float32_t)(8*PI*index)/(float32_t)(length-1));
+	return flatTopTable[0] - flatTopTable[1] * arm_cos_f32((float32_t)(2*PI*index)/(float32_t)(length-1)) + flatTopTable[2] * arm_cos_f32((float32_t)(4*PI*index)/(float32_t)(length-1)) - flatTopTable[3] * arm_cos_f32((float32_t)(6*PI*index)/(float32_t)(length-1)) + flatTopTable[4] * arm_cos_f32((float32_t)(8*PI*index)/(float32_t)(length-1));
 }
 		
 void soundProcessingProcessWindow(WindowType windowType, float32_t* soundBuffer, uint32_t length)
