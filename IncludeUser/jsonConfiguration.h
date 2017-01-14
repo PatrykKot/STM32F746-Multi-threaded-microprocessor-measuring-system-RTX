@@ -36,7 +36,7 @@ typedef struct {
 
 /* Functions */
 void parseJSON(char* jsonData, StmConfig* config);
-void stmConfigToString(StmConfig* config, char* str);
+void stmConfigToString(StmConfig* config, char* str, uint32_t len);
 void copyConfig(StmConfig* destination, StmConfig* source);
 void makeChanges(StmConfig* newConfig, StmConfig* oldConfig);
 

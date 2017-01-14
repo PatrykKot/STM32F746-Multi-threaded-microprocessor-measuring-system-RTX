@@ -7,8 +7,6 @@
 
 #include "jsonConfiguration.h"
 
-static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\",\"WindowType\":\"%s\"}";
-
 /**
  * @brief Parses JSON data to \StmConfig structure
  */
@@ -77,8 +75,9 @@ void parseJSON(char* jsonData, StmConfig* config) {
  * @param config: pointer to \ref StmConfig structure
  * @param str: pointer to output of the JSON string (must have allocated memory)
  */
-void stmConfigToString(StmConfig* config, char* str) {
+void stmConfigToString(StmConfig* config, char* str, uint32_t len) {
 	char windowTypeStr[20];
+	cJSON *jsonCreator;
 	
 	switch(config->windowType)
 	{
@@ -103,7 +102,18 @@ void stmConfigToString(StmConfig* config, char* str) {
 			break;
 		}
 	}
-	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp, windowTypeStr);
+	
+	jsonCreator = cJSON_CreateObject();
+	cJSON_AddNumberToObject(jsonCreator, "UdpEndpointPort", config->clientPort);
+	cJSON_AddNumberToObject(jsonCreator, "AmplitudeSamplingDelay",
+			config->amplitudeSamplingDelay);
+	cJSON_AddNumberToObject(jsonCreator, "SamplingFrequency",
+			config->audioSamplingFrequency);
+	cJSON_AddStringToObject(jsonCreator, "UdpEndpointIP", config->clientIp);
+	cJSON_AddStringToObject(jsonCreator, "WindowType", windowTypeStr);
+
+	cJSON_PrintPreallocated(jsonCreator, str, len, FALSE);
+	cJSON_Delete(jsonCreator);
 }
 
 /**

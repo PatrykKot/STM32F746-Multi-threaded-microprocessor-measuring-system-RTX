@@ -20,7 +20,7 @@
  * @def ETHERNET_AMP_BUFFER_SIZE
  * @brief Amplitude data length sent to PC
  */
-#define ETHERNET_DEFAULT_AMP_BUFFER_SIZE 256
+#define ETHERNET_DEFAULT_AMP_BUFFER_SIZE 1024
 
 /**
  * HTTP request types

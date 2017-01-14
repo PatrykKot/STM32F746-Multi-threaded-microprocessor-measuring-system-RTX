@@ -224,7 +224,7 @@ void closeSocket(int32_t socket)
  */
 netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters) {
 	char configContent[256];
-	stmConfigToString(config, configContent);
+	stmConfigToString(config, configContent, 256);
 	return sendHttpResponse(client, "200 OK", requestParameters, configContent);
 }
 
