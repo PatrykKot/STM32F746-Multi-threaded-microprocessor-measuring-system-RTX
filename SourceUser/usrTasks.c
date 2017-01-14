@@ -342,7 +342,7 @@ void soundProcessingTask(void const * argument) {
 					}
 					
 					// processing window
-					soundProcessingProcessWindow(configStr->windowType, temporaryAudioBuffer, length);
+					soundProcessingProcessWindow((WindowType) configStr->windowType, temporaryAudioBuffer, length);
 
 					// calculating spectrum
 					soundProcessingGetAmplitudeInstance(cfftInstance,

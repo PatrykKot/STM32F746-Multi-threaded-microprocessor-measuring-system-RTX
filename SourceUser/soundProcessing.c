@@ -139,14 +139,14 @@ void soundProcessingCopyAmplitudeInstance(SpectrumStr* source,
 	}
 }
 		
-static float32_t calcHann(uint32_t index, uint32_t length)
+float32_t calcHann(uint32_t index, uint32_t length)
 {
 	return (float32_t)0.5*((float32_t)1-arm_cos_f32((float32_t)(2*PI*index)/(float32_t)(length-1)));
 }
 
 static const float32_t flatTopTable[] = {0.21557895, 0.41663158, 0.277263158, 0.083578947, 0.006947368};
 
-static float32_t calcFlatTop(uint32_t index, uint32_t length)
+float32_t calcFlatTop(uint32_t index, uint32_t length)
 {
 	return flatTopTable[0] - flatTopTable[1] * arm_cos_f32((float32_t)(2*PI*index)/(float32_t)(length-1)) + flatTopTable[2] * arm_cos_f32((float32_t)(4*PI*index)/(float32_t)(length-1)) - flatTopTable[3] * arm_cos_f32((float32_t)(6*PI*index)/(float32_t)(length-1)) + flatTopTable[4] * arm_cos_f32((float32_t)(8*PI*index)/(float32_t)(length-1));
 }

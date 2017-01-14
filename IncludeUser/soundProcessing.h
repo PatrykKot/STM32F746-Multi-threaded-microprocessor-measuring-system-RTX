@@ -56,6 +56,8 @@ void soundProcessingGetCfftInstance(arm_cfft_instance_f32* instance,
 		uint32_t length);
 void soundProcessingCopyAmplitudeInstance(SpectrumStr* source,
 		SpectrumStr* destination);
+float32_t calcHann(uint32_t index, uint32_t length);
+float32_t calcFlatTop(uint32_t index, uint32_t length);
 void soundProcessingProcessWindow(WindowType windowType, float32_t* soundBuffer, uint32_t length);
 
 #endif /* SOUNDPROCESSING_H_ */
