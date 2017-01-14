@@ -156,7 +156,7 @@ void initTask(void const * argument) {
 	configStr->clientPort = UDP_STREAMING_PORT;
 	strcpy(configStr->clientIp, UDP_STREAMING_IP);
 	configStr->ethernetDataSize = ETHERNET_DEFAULT_AMP_BUFFER_SIZE;
-	configStr->windowType = RECTANGLE;
+	configStr->windowType = FLAT_TOP;
 	
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
@@ -305,6 +305,8 @@ void soundProcessingTask(void const * argument) {
 
 	osEvent event;
 	float32_t temporaryAudioBuffer[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE];
+	
+	uint32_t length;
 
 	// allocating memory for temporary spectrum buffer
 	temporarySpectrumBufferStr = osPoolCAlloc(spectrumBufferPool_id);
@@ -329,6 +331,9 @@ void soundProcessingTask(void const * argument) {
 					// spectrum buffer initialization and sound buffer copying
 					soundProcessingAmplitudeInit(temporarySpectrumBufferStr,
 							mainSoundBuffer, temporaryAudioBuffer);
+					
+					// get length
+					length = mainSoundBuffer->size;
 
 					// releasing mainSoundBufferMutex
 					status = osMutexRelease(mainSoundBufferMutex_id);
@@ -336,6 +341,9 @@ void soundProcessingTask(void const * argument) {
 						logErrVal("Sampling mutex (sound processing) release",
 								status);
 					}
+					
+					// processing window
+					soundProcessingProcessWindow(configStr->windowType, temporaryAudioBuffer, length);
 
 					// calculating spectrum
 					soundProcessingGetAmplitudeInstance(cfftInstance,

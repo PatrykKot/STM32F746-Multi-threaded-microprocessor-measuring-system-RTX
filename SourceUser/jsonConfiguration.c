@@ -56,9 +56,13 @@ void parseJSON(char* jsonData, StmConfig* config) {
 		{
 			config->windowType = RECTANGLE;
 		}
-		else if (strcmp(windowTypeStr, "TRIANGLE"))
+		else if (strcmp(windowTypeStr, "HANN"))
 		{
-			config->windowType = TRIANGLE;
+			config->windowType = HANN;
+		}
+		else if(strcmp(windowTypeStr, "FLAT_TOP"))
+		{
+			config->windowType = FLAT_TOP;
 		}
 	}
 
@@ -80,9 +84,14 @@ void stmConfigToString(StmConfig* config, char* str) {
 			strcpy(windowTypeStr, "RECTANGLE");
 			break;
 		}
-		case TRIANGLE:
+		case HANN:
 		{
-			strcpy(windowTypeStr, "RECTANGLE");
+			strcpy(windowTypeStr, "HANN");
+			break;
+		}
+		case FLAT_TOP:
+		{
+			strcpy(windowTypeStr, "FLAT_TOP");
 			break;
 		}
 		default:
@@ -125,7 +134,7 @@ void copyConfig(StmConfig* destination, StmConfig* source) {
 		destination->ethernetDataSize = source->ethernetDataSize;
 	}
 	
-	if(source->windowType > UNDEFINED && source->windowType <= TRIANGLE)
+	if(source->windowType > UNDEFINED && source->windowType <= FLAT_TOP)
 	{
 		destination->windowType = source->windowType;
 	}
@@ -162,7 +171,7 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 		logMsgVal("Changed UDP data size ", newConfig->ethernetDataSize);
 	}
 	
-	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= TRIANGLE)
+	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= HANN)
 	{
 		switch(newConfig->windowType)
 		{
@@ -171,9 +180,14 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 				logMsg("Changed window RECTANGLE");
 				break;
 			}
-			case TRIANGLE:
+			case HANN:
 			{
-				logMsg("Changed window TRIANGLE");
+				logMsg("Changed window HANN");
+				break;
+			}
+			case FLAT_TOP:
+			{
+				logMsg("Changed window FLAT_TOP");
 				break;
 			}
 			default:

@@ -15,7 +15,6 @@
 #include "arm_math.h"
 #include "arm_const_structs.h"
 
-
 /**
  * @def AMPLITUDE_STR_MAX_BUFFER_SIZE
  * @brief Maximum bufffer size of the amplitude structure \ref AmplitudeStr
@@ -34,7 +33,8 @@ typedef struct {
 typedef enum {
 	UNDEFINED = 0,
 	RECTANGLE = 1,
-	TRIANGLE = 2
+	HANN = 2,
+	FLAT_TOP = 3
 } WindowType;
 
 /**
@@ -56,5 +56,6 @@ void soundProcessingGetCfftInstance(arm_cfft_instance_f32* instance,
 		uint32_t length);
 void soundProcessingCopyAmplitudeInstance(SpectrumStr* source,
 		SpectrumStr* destination);
+void soundProcessingProcessWindow(WindowType windowType, float32_t* soundBuffer, uint32_t length);
 
 #endif /* SOUNDPROCESSING_H_ */
