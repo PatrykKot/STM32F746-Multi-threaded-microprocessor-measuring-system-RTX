@@ -30,7 +30,6 @@ typedef struct {
 	uint8_t amplitudeSamplingDelay;
 	uint32_t audioSamplingFrequency;
 	uint32_t clientPort;
-	uint32_t ethernetDataSize;
 	uint32_t windowType;
 	char clientIp[20];
 } StmConfig;

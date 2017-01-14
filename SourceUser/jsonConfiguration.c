@@ -7,21 +7,29 @@
 
 #include "jsonConfiguration.h"
 
-static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\",\"UdpDataSize\":%d,\"WindowType\":\"%s\"}";
+static const char jsonTemplate[] = "{\"UdpEndpointPort\":%d,\"AmplitudeSamplingDelay\":%d,\"SamplingFrequency\":%d,\"UdpEndpointIP\":\"%s\",\"WindowType\":\"%s\"}";
 
 /**
  * @brief Parses JSON data to \StmConfig structure
  */
 void parseJSON(char* jsonData, StmConfig* config) {
 	char windowTypeStr[20];
-	cJSON* parser = cJSON_Parse(jsonData);
+	char errorMsg[35];
+	cJSON* parser;
 	
 	config->amplitudeSamplingDelay = 0;
 	config->audioSamplingFrequency = 0;
 	strcpy(config->clientIp, "");
 	config->clientPort = 0;
-	config->ethernetDataSize = 0;
 	config->windowType = UNDEFINED;
+	
+	parser = cJSON_Parse(jsonData);
+	if(!parser)
+	{
+		sprintf(errorMsg, "cJSON error");
+		logErr(errorMsg);
+		return;
+	}
 	
 	if(cJSON_HasObjectItem(parser,"UdpEndpointIP"))
 	{
@@ -43,24 +51,19 @@ void parseJSON(char* jsonData, StmConfig* config) {
 		config->clientPort = cJSON_GetObjectItem(parser, "UdpEndpointPort")->valueint;
 	}
 	
-	if(cJSON_HasObjectItem(parser,"UdpDataSize"))
-	{
-		config->ethernetDataSize = cJSON_GetObjectItem(parser, "UdpDataSize")->valueint;
-	}
-	
 	if(cJSON_HasObjectItem(parser,"WindowType"))
 	{
 		strcpy(windowTypeStr, cJSON_GetObjectItem(parser, "WindowType")->valuestring);
 		
-		if(strcmp(windowTypeStr, "RECTANGLE"))
+		if(strcmp(windowTypeStr, "RECTANGLE") == 0)
 		{
 			config->windowType = RECTANGLE;
 		}
-		else if (strcmp(windowTypeStr, "HANN"))
+		else if (strcmp(windowTypeStr, "HANN") == 0)
 		{
 			config->windowType = HANN;
 		}
-		else if(strcmp(windowTypeStr, "FLAT_TOP"))
+		else if(strcmp(windowTypeStr, "FLAT_TOP") == 0)
 		{
 			config->windowType = FLAT_TOP;
 		}
@@ -100,7 +103,7 @@ void stmConfigToString(StmConfig* config, char* str) {
 			break;
 		}
 	}
-	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp, config->ethernetDataSize, windowTypeStr);
+	sprintf(str, jsonTemplate, config->clientPort, config->amplitudeSamplingDelay, config->audioSamplingFrequency, config->clientIp, windowTypeStr);
 }
 
 /**
@@ -127,11 +130,6 @@ void copyConfig(StmConfig* destination, StmConfig* source) {
 	if(source->clientPort != 0)
 	{
 		destination->clientPort = source->clientPort;
-	}
-	
-	if(source->ethernetDataSize != 0)
-	{
-		destination->ethernetDataSize = source->ethernetDataSize;
 	}
 	
 	if(source->windowType > UNDEFINED && source->windowType <= FLAT_TOP)
@@ -164,11 +162,6 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 	{
 		sprintf(msg, "Changed client IP: %s", newConfig->clientIp);
 		logMsg(msg);
-	}
-	
-	if(newConfig->ethernetDataSize != oldConfig->ethernetDataSize && newConfig->ethernetDataSize != 0)
-	{
-		logMsgVal("Changed UDP data size ", newConfig->ethernetDataSize);
 	}
 	
 	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= HANN)

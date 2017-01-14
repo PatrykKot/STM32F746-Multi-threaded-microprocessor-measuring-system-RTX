@@ -90,10 +90,10 @@ netStatus sendSpectrum(SpectrumStr* spectrumStr, StmConfig* config) {
 	
 	sscanf(config->clientIp, "%d.%d.%d.%d", &ip[0], &ip[1], &ip[2], &ip[3]);
 	
-	length = config->ethernetDataSize * sizeof(float32_t);	
+	length = ETHERNET_DEFAULT_AMP_BUFFER_SIZE * sizeof(float32_t);	
 	buff = udp_get_buf(length);
 	
-	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, config->ethernetDataSize);
+	copySpectrumToBuffer(buff, spectrumStr->amplitudeVector, ETHERNET_DEFAULT_AMP_BUFFER_SIZE);
 	
 	return udp_send(streamingSocketHandle, ip, config->clientPort, buff, length);
 }

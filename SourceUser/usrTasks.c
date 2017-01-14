@@ -155,7 +155,6 @@ void initTask(void const * argument) {
 	configStr->audioSamplingFrequency = AUDIO_RECORDER_DEFAULT_FREQUENCY;
 	configStr->clientPort = UDP_STREAMING_PORT;
 	strcpy(configStr->clientIp, UDP_STREAMING_IP);
-	configStr->ethernetDataSize = ETHERNET_DEFAULT_AMP_BUFFER_SIZE;
 	configStr->windowType = FLAT_TOP;
 	
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
@@ -446,7 +445,7 @@ void streamingTask(void const * argument) {
  */
 void httpConfigTask(void const* argument) {
 	osEvent event;
-	char data[1024];
+	char data[2048];
 	int32_t httpSocket;
 	StmConfig tempConfig;
 	
