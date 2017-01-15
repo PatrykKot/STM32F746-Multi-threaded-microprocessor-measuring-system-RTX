@@ -155,7 +155,7 @@ void initTask(void const * argument) {
 	configStr->audioSamplingFrequency = AUDIO_RECORDER_DEFAULT_FREQUENCY;
 	configStr->clientPort = UDP_STREAMING_PORT;
 	strcpy(configStr->clientIp, UDP_STREAMING_IP);
-	configStr->windowType = FLAT_TOP;
+	configStr->windowType = RECTANGLE;
 	
 	mainSpectrumBuffer = osPoolCAlloc(spectrumBufferPool_id);
 	mainSoundBuffer = osPoolCAlloc(soundBufferPool_id);
@@ -510,7 +510,6 @@ void httpConfigTask(void const* argument) {
 						parseJSON(data, &tempConfig);
 						makeChanges(&tempConfig, configStr);
 						
-						copyConfig(configStr, &tempConfig);
 						sendConfiguration(configStr, httpSocket, "\r\nConnection: Closed");
 					}
 					else

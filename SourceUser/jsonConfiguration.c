@@ -116,62 +116,34 @@ void stmConfigToString(StmConfig* config, char* str, uint32_t len) {
 	cJSON_Delete(jsonCreator);
 }
 
-/**
- * @brief Copies \ref StmConfig structure to another \ref StmConfig structure
- * @param destination: pointer (output) to \ref StmConfig structure
- * @param source: pointer to \ref StmConfig structure
- */
-void copyConfig(StmConfig* destination, StmConfig* source) {
-	if(source->amplitudeSamplingDelay != 0)
-	{
-		destination->amplitudeSamplingDelay = source->amplitudeSamplingDelay;
-	}
-	
-	if(source->audioSamplingFrequency != 0)
-	{
-		destination->audioSamplingFrequency = source->audioSamplingFrequency;
-	}
-	
-	if(strlen(source->clientIp)>0)
-	{
-		strcpy(destination->clientIp, source->clientIp);
-	}
-	
-	if(source->clientPort != 0)
-	{
-		destination->clientPort = source->clientPort;
-	}
-	
-	if(source->windowType > UNDEFINED && source->windowType <= FLAT_TOP)
-	{
-		destination->windowType = source->windowType;
-	}
-		
-}
-
 void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 	char msg[30];
+	uint8_t knownWindow = TRUE;
 	
 	if(newConfig->amplitudeSamplingDelay != oldConfig->amplitudeSamplingDelay && newConfig->amplitudeSamplingDelay != 0)
 	{
 		logMsgVal("Changed sampling delay ", newConfig->amplitudeSamplingDelay);
+		oldConfig->amplitudeSamplingDelay = newConfig->amplitudeSamplingDelay;
 	}
 	
 	if(newConfig->audioSamplingFrequency != oldConfig->audioSamplingFrequency && newConfig->audioSamplingFrequency != 0)
 	{
-		audioRecorderSetSamplingFrequency(newConfig->audioSamplingFrequency);
 		logMsgVal("Changed sampling frequency ", newConfig->audioSamplingFrequency);
+		audioRecorderSetSamplingFrequency(newConfig->audioSamplingFrequency);
+		oldConfig->audioSamplingFrequency = newConfig->audioSamplingFrequency;
 	}
 	
 	if(newConfig->clientPort != oldConfig->clientPort && newConfig->clientPort != 0)
 	{
 		logMsgVal("Changed client port ", newConfig->clientPort);
+		oldConfig->clientPort = newConfig->clientPort;
 	}
 	
-	if(strcmp(newConfig->clientIp, oldConfig->clientIp) && strlen(newConfig->clientIp) > 0)
+	if(strcmp(newConfig->clientIp, oldConfig->clientIp) && strlen(newConfig->clientIp) > 0 && strcmp(newConfig->clientIp, "0.0.0.0"))
 	{
 		sprintf(msg, "Changed client IP: %s", newConfig->clientIp);
 		logMsg(msg);
+		strcpy(oldConfig->clientIp, newConfig->clientIp);
 	}
 	
 	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= HANN)
@@ -196,8 +168,14 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 			default:
 			{
 				logErr("Unknown window");
+				knownWindow = FALSE;
 				break;
 			}
+		}
+		
+		if(knownWindow)
+		{
+			oldConfig->windowType = newConfig->windowType;
 		}
 	}
 }
