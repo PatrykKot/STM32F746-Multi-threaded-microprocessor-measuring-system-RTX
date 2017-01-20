@@ -85,5 +85,6 @@ netStatus sendString(int32_t socket, const char* array);
 
 uint8_t isConfigRequest(char* buf);
 uint8_t isSystemRequest(char* buf);
+uint8_t isWindowSizeRequest(char* buf);
 
 #endif /* ETHERNETLIB_H_ */

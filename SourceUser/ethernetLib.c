@@ -266,3 +266,7 @@ uint8_t isConfigRequest(char* buf) {
 uint8_t isSystemRequest(char* buf) {
 	return (strstr(buf, " /system ")!=NULL);
 }
+
+uint8_t isWindowSizeRequest(char* buf) {
+	return (strstr(buf, " /windowSize ")!=NULL);
+}

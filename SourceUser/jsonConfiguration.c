@@ -146,7 +146,7 @@ void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 		strcpy(oldConfig->clientIp, newConfig->clientIp);
 	}
 	
-	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= HANN)
+	if(newConfig->windowType != oldConfig->windowType && newConfig->windowType > UNDEFINED && newConfig->windowType <= FLAT_TOP)
 	{
 		switch(newConfig->windowType)
 		{
