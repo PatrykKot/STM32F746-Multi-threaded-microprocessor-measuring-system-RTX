@@ -39,7 +39,7 @@
  * @def AUDIO_BUFFER_SIZE
  * @brief Audio buffer size
  */
-#define AUDIO_BUFFER_SIZE 128
+#define AUDIO_BUFFER_SIZE 64
 
 
 /**
