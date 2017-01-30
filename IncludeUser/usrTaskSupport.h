@@ -12,6 +12,7 @@
 #include "stdio.h"
 #include "lcdLogger.h"
 
+/* Functions */
 void printNullHandle(char* taskName);
 void printHandleOk(char* taskName);
 

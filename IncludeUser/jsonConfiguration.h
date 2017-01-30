@@ -18,13 +18,11 @@
 #include "audioRecording.h"
 #include "soundProcessing.h"
 
-#define IP_ADDR_GET(ipaddr,index) (int)(((u32_t)(ipaddr.addr)>>((u32_t)(8*index)))&((u32_t)0xff))
-
 #define TRUE 1
 #define FALSE 0
 
 /**
- * @brief Structure represents device configuration
+ * @brief Structure which represents device configuration
  */
 typedef struct {
 	uint8_t amplitudeSamplingDelay;

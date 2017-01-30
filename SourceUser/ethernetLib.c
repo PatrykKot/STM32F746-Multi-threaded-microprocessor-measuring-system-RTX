@@ -9,14 +9,35 @@
 
 extern  LOCALM localm[];
 #define LocM   localm[NETIF_ETH]
+
+/**
+ * @brief Ethernet cable state
+ */
 uint8_t ethernetConnected = 0;
 
+/**
+ * @brief Handle to UDP socket
+ **/
 static uint32_t streamingSocketHandle;
+
+/**
+ * @brief Handle to TCP socket
+ */
 static uint32_t httpSocketHandle;
 
+/**
+ * @brief Temporary pointer to HTTP data
+ */
 static char httpData[1024];
+
+/**
+ * @brief HTTP thread handle
+ */
 static osThreadId* httpThreadHandle;
 
+/**
+ * @brief Union to easy convert integer value to byte float value (and inverse)
+ */
 union FloatConversion {
 	float32_t floatVal;
 	uint32_t intVal;
@@ -24,19 +45,30 @@ union FloatConversion {
 
 /**
  * @var char httpOkHeaderPattern[]
- * @brief Plain header of 200 HTTP response
+ * @brief Plain header of HTTP response
  */
 const char httpHeaderPattern[] = "HTTP/1.0 %s\r\nContent-Length: %d%s\r\n\r\n%s";
 
+/**
+ * @brief Ethernet initialization
+ */
 void ethInit(void) {
 	net_initialize();
 }
 
+/**
+ * @brief Checks if is ethernet cable connected
+ * @retval 1 if is connected
+ */
 uint8_t isEthernetConnected()
 {
 	return ethernetConnected;
 }
 
+/**
+ * @brief Ethernet interface state interrupt
+ * @param event: ethernet state type
+ */
 void eth_link_notify(uint32_t if_num, ethLinkEvent event)
 {
 	if(event != ethLinkDown)
@@ -51,38 +83,61 @@ void eth_link_notify(uint32_t if_num, ethLinkEvent event)
 	}
 }
 
+/**
+ * @brief Prints ethernet interface IP on LCD
+ */
 void printIp() {
 	char msg[30];
 	sprintf(msg, "IP: %s", ip4_ntoa (LocM.IpAddr));
 	logMsg(msg);
 }
 
+/**
+ * @brief Prints ethernet interface netmask on LCD
+ */
 void printNetmask() {
 	char msg[30];
 	sprintf(msg, "Netmask: %s", ip4_ntoa (LocM.NetMask));
 	logMsg(msg);
 }
 
+/**
+ * @brief Prints ethernet interface gateway on LCD
+ */
 void printGateway() {
 	char msg[30];
 	sprintf(msg, "Gateway: %s", ip4_ntoa (LocM.DefGW));
 	logMsg(msg);
 }
 
+/**
+ * @brief UDP socket interrupt
+ */
 uint32_t streamingSocketCallback(int32_t socket, const uint8_t *ip_addr, uint16_t port, const uint8_t *buf, uint32_t len) {
-	logMsg("Streaming socket callback");
-	
-  return 0;
+	return 0;
 }
 
+/**
+ * @brief Initializes UDP socket
+ */
 void initStreamingSocket() {
 	streamingSocketHandle = udp_get_socket (0, 0, streamingSocketCallback);
 }
 
+/**
+ * @brief Opens UDP socket
+ * @param config: pointer to system configuration structure
+ */
 void openStreamingSocket(StmConfig* config) {
 	udp_open(streamingSocketHandle, config->clientPort);
 }
 
+/**
+ * @brief Sends spectrum by UDP
+ * @param spectrumStr: pointer to spectrum buffer
+ * @param config: pointer to system configuration structure
+ * @retval network status
+ */
 netStatus sendSpectrum(SpectrumStr* spectrumStr, StmConfig* config) {
 	uint8_t ip[4];
 	uint8_t* buff;
@@ -98,6 +153,12 @@ netStatus sendSpectrum(SpectrumStr* spectrumStr, StmConfig* config) {
 	return udp_send(streamingSocketHandle, ip, config->clientPort, buff, length);
 }
 
+/**
+ * @brief Copies spectrum buffer to integer array
+ * @param buffer: output integer array
+ * @param spectrumVector: spectrum buffer
+ * @param vectorLength: spectrum buffer length
+ */
 void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t vectorLength) {
 	uint32_t intIterator;
 	uint32_t floatIterator;
@@ -118,10 +179,21 @@ void copySpectrumToBuffer(uint8_t* buffer, float32_t* spectrumVector, uint32_t v
 	}
 }
 
+/**
+ * @brief Closes UDP socket
+ */
 void closeStreamingSocket() {
 	udp_close(streamingSocketHandle);
 }
 
+/**
+ * @brief HTTP socket interrupt
+ * @param soc: socket handle
+ * @param event: event type
+ * @param buf: incoming data
+ * @param buf: data length
+ * @retval returns 1 if TCP server should accept new connection
+ */
 uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uint32_t len) {
 	uint16_t requestType;
 	char* request;
@@ -129,20 +201,7 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
 	request = (char*)buf;
   switch (event) {
     case tcpEventConnect:
-			//logMsg("New connection");
       return (1);
-    case tcpEventAbort:
-      //logErr("Connection aborted");
-      break;
-    case tcpEventEstablished:
-      //logMsg("Connected to peer"); 
-      break;
-    case tcpEventClosed:
-      //logMsg("Connection closed");
-      break;
-    case tcpEventACK:
-      //logMsg("Event ACK");
-      break;
     case tcpEventData:
 		{
       logMsg("Event data");
@@ -180,15 +239,26 @@ uint32_t httpSocketCallback(int32_t soc, tcpEvent event, const uint8_t *buf, uin
   return 0;
 }
 
+/**
+ * @brief Initializes TCP socket
+ * @param thread_id: pointer to HTTP system thread
+ */
 void initHttpSocket(osThreadId* thread_id) {
 	httpSocketHandle = tcp_get_socket(TCP_TYPE_SERVER, 0, 50, httpSocketCallback);
 	httpThreadHandle = thread_id;
 }
 
+/**
+ * @brief Last data buffer from TCP socket
+ * @param data: output data pointer
+ */
 void getData(char* data) {
 	strcpy(data, httpData);
 }
 
+/**
+ * @brief Starts HTTP server listening
+ */
 void httpStartListen() {
 	tcp_listen(httpSocketHandle, 80);
 }
@@ -207,19 +277,28 @@ HttpRequestType getRequestType(char* fullMsg) {
 		return NOT_SUPPORTED_REQUEST;
 }
 
+/**
+ * @brief Gets TCP socket handle
+ * @retval HTTP socket handle
+ */
 int32_t getHttpSocket() {
 	return httpSocketHandle;
 }
 
+/**
+ * @brief Closes TCP socket
+ * @param socket: socket handle
+ */
 void closeSocket(int32_t socket)
 {
 	tcp_close(socket);
 }
 
 /**
- * @brief Sens the device configuration to the client
+ * @brief Sends the device configuration to the client
  * @param config: pointer to \ref StmConfig structure
- * @param client: pointer to \ref netconn structure (represents endpoint client)
+ * @param client: client handle
+ * @param requestParameters: HTTP request parameters
  * @retval ERR_OK if there are no errors
  */
 netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestParameters) {
@@ -228,14 +307,26 @@ netStatus sendConfiguration(StmConfig* config, int32_t client, char* requestPara
 	return sendHttpResponse(client, "200 OK", requestParameters, configContent);
 }
 
-netStatus sendHttpResponse(int32_t client, char* httpStatus,
-		char* requestParameters, char* content) {
+/**
+ * @brief Sends HTTP response to the client
+ * @param client: client handle
+ * @param httpStatus: HTTP status
+ * @param requestParameters: HTTP request parameters
+ * @param content: HTTP content
+ * @retval ERR_OK if there are no errors
+ */
+netStatus sendHttpResponse(int32_t client, char* httpStatus, char* requestParameters, char* content) {
 	char response[1024];
 	sprintf(response, httpHeaderPattern, httpStatus, strlen(content),
 			requestParameters, content);
 	return sendString(client, response);
 }
 
+/**
+ * @brief Sends string by TCP
+ * @param array: string to send
+ * @retval ERR_OK if there are no errors
+ */
 netStatus sendString(int32_t client, const char* array) {
 	uint32_t length;
 	uint8_t* buf;
@@ -249,7 +340,7 @@ netStatus sendString(int32_t client, const char* array) {
 	}
 	else
 	{
-		logErr("Check false");
+		logErr("Check TCP false");
 		return netBusy;
 	}
 }
@@ -257,16 +348,17 @@ netStatus sendString(int32_t client, const char* array) {
 /**
  * @brief Check if the request includes '/config' text
  * @param buf: pointer to \ref netbuf structure
- * @retval 1 if request includes '/config'
+ * @retval returns 1 if request includes '/config'
  */
 uint8_t isConfigRequest(char* buf) {
 	return (strstr(buf, " /config ")!=NULL);
 }
 
+/**
+ * @brief Check if the request includes '/system' text
+ * @param buf: pointer to \ref netbuf structure
+ * @retval returns 1 if request includes '/system'
+ */
 uint8_t isSystemRequest(char* buf) {
 	return (strstr(buf, " /system ")!=NULL);
-}
-
-uint8_t isWindowSizeRequest(char* buf) {
-	return (strstr(buf, " /windowSize ")!=NULL);
 }

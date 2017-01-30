@@ -29,10 +29,11 @@ uint8_t audioRecorderInit(uint16_t inputDevice, uint8_t volume,
 
 /**
  * @brief The function sets the 16 bit audio buffer (must have allocated memory) by \p audioBuffer and \p audioBufferSize.
+ * @param audioBuffer: pointer to global audio buffer
+ * @param audioBufferSize: size of audio buffer
  * @retval AUDIO_OK - no errors
  */
-uint8_t audioRecorderStartRecording(uint16_t* audioBuffer,
-		uint32_t audioBufferSize) {
+uint8_t audioRecorderStartRecording(uint16_t* audioBuffer, uint32_t audioBufferSize) {
 	audioBufferStat = audioBuffer;
 	audioBufferSizeStat = audioBufferSize;
 
@@ -41,6 +42,7 @@ uint8_t audioRecorderStartRecording(uint16_t* audioBuffer,
 
 /**
  * @brief Controls the audio recorder volume.
+ * @param volume: volume of audio sampling (0 to 100 where 80 equals 0 dB)
  * @retval AUDIO_OK - no errors
  */
 uint8_t audioRecorderSetVolume(uint8_t volume) {
@@ -48,8 +50,14 @@ uint8_t audioRecorderSetVolume(uint8_t volume) {
 	return BSP_AUDIO_IN_SetVolume(volume);
 }
 
+/**
+ * @brief Changes audio sampling frequency
+ * @param frequency: new audio sampling frequency
+ * @retval AUDIO_OK - no errors
+ */
 uint8_t audioRecorderSetSamplingFrequency(uint32_t frequency) {
 	uint8_t status;
+	
 	BSP_AUDIO_IN_Pause();
 	BSP_AUDIO_IN_Stop(CODEC_PDWN_HW);
 	audioFreqStat = frequency;
@@ -69,8 +77,7 @@ uint8_t audioRecorderSetSamplingFrequency(uint32_t frequency) {
  * @param audioBufferSize buffer size
  * @param frequency sampling frequency
  */
-void audioRecordingSoundMailFill(SoundMailStr* soundStructure,
-		uint16_t* audioBuffer, uint32_t audioBufferSize, uint32_t frequency) {
+void audioRecordingSoundMailFill(SoundMailStr* soundStructure, uint16_t* audioBuffer, uint32_t audioBufferSize, uint32_t frequency) {
 	uint32_t iterator;
 	soundStructure->frequency = frequency;
 	soundStructure->soundBufferSize = audioBufferSize;
@@ -85,8 +92,7 @@ void audioRecordingSoundMailFill(SoundMailStr* soundStructure,
  * @param soundBuffer: pointer to SoundBuffer (destination)
  * @param SoundMail: pointer to SoundMail (source)
  */
-void audioRecordingUpdateSoundBuffer(SoundBufferStr* soundBuffer,
-		SoundMailStr* soundMail) {
+void audioRecordingUpdateSoundBuffer(SoundBufferStr* soundBuffer, SoundMailStr* soundMail) {
 	uint32_t i;
 	soundBuffer->frequency = soundMail->frequency;
 

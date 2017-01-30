@@ -119,7 +119,7 @@ void initTask(void const * argument) {
 	} while (event.status != osOK && event.status != osEventSignal);
 	logMsg("Ethernet thread done");
 
-	/* Taska, mutexes, mail queues and memory pools initialization */
+	/* Tasks, mutexes, mail queues and memory pools initialization */
 	logMsg("Initializing memory pools");
 	spectrumBufferPool_id = osPoolCreate(osPool(spectrumBufferPool));
 	if (spectrumBufferPool_id == NULL)
@@ -448,7 +448,6 @@ void httpConfigTask(void const* argument) {
 	char data[2048];
 	int32_t httpSocket;
 	StmConfig tempConfig;
-	char numStr[10];
 	
 	initHttpSocket(&httpConfigTaskHandle);
 	httpStartListen();
@@ -480,12 +479,6 @@ void httpConfigTask(void const* argument) {
 					{
 						logErr("System request");
 						sendHttpResponse(httpSocket, "501 Not Implemented","\r\nContent-Type: text/html", "<h1>System info not supported on RTX</h1>");
-					}
-					else if(isWindowSizeRequest(data))
-					{
-						logMsg("Window size request");
-						sprintf(numStr, "%d", MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE/2);
-						sendHttpResponse(httpSocket, "200 OK", "\r\nConnection: Closed", numStr);
 					}
 					else
 					{

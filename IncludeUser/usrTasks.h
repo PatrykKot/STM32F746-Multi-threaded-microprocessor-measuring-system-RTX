@@ -11,12 +11,9 @@
 #include "lcdLogger.h"
 #include "audioRecording.h"
 #include "soundProcessing.h"
-//#include "lcdAmplitudePrinter.h"
 #include "ethernetLib.h"
 #include "jsonConfiguration.h"
-
 #include "usrTaskSupport.h"
-
 #include "cmsis_os.h"
 
 /* Functions */
@@ -27,6 +24,7 @@ void threadsInit(void);
 void lcdTask(void const * argument);
 #endif
 
+/* Tasks */
 void soundProcessingTask(void const * argument);
 void samplingTask(void const * argument);
 void ethernetTask(void const * argument);
@@ -55,6 +53,10 @@ void initTask(void const * argument);
 #define ETHERNET_FINISHED_SIGNAL 0x0001
 #define START_SOUND_PROCESSING_SIGNAL 0x0001
 
+/**
+ * @def MINIMAL_STACK_SIZE
+ * @brief Minimal stack size for every non-private thread
+ */
 #define MINIMAL_STACK_SIZE 128
 
 #endif /* USRTASKS_H_ */

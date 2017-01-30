@@ -9,6 +9,8 @@
 
 /**
  * @brief Parses JSON data to \StmConfig structure
+ * @param jsonData: JSON data string
+ * @param config: output system configuration structure
  */
 void parseJSON(char* jsonData, StmConfig* config) {
 	char windowTypeStr[20];
@@ -74,6 +76,7 @@ void parseJSON(char* jsonData, StmConfig* config) {
  * @brief Converts \ref StmConfig structure to JSON string
  * @param config: pointer to \ref StmConfig structure
  * @param str: pointer to output of the JSON string (must have allocated memory)
+ * @param len: length of output JSON string
  */
 void stmConfigToString(StmConfig* config, char* str, uint32_t len) {
 	char windowTypeStr[20];
@@ -116,6 +119,11 @@ void stmConfigToString(StmConfig* config, char* str, uint32_t len) {
 	cJSON_Delete(jsonCreator);
 }
 
+/**
+ * @brief Updates old system configuration structure and does changes in device
+ * @param newConfig: pointer to new system configuration structure
+ * @param oldConfig: pointer to old system configuration structure
+ */
 void makeChanges(StmConfig* newConfig, StmConfig* oldConfig) {
 	char msg[30];
 	uint8_t knownWindow = TRUE;

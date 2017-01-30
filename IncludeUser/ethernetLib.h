@@ -23,7 +23,7 @@
 #define ETHERNET_DEFAULT_AMP_BUFFER_SIZE 1024
 
 /**
- * HTTP request types
+ * @brief HTTP request types
  */
  typedef enum {
 	 NOT_SUPPORTED_REQUEST = 0,
@@ -31,6 +31,9 @@
 	 PUT_REQUEST
  } HttpRequestType;
  
+/**
+ * @brief Http method signal type
+ */
  typedef enum {
 	 GET_REQUEST_SIGNAL = 0x01,
 	 PUT_REQUEST_SIGNAL = 0x02,
@@ -38,24 +41,39 @@
  } HttpServerSignal;
 
 /**
- * UDP streaming port
+ * @def UDP_STREAMING_PORT
+ * @brief Default UDP streaming port
  */
 #define UDP_STREAMING_PORT 53426
 
 /**
- * UDP streaming IP
+ * @def UDP_STREAMING_IP
+ * @brief Default UDP streaming IP
  */
 #define UDP_STREAMING_IP "192.168.1.10"
 
 /**
- *
+ * @def UDP_STREAMING_FAILURE_TIMEOUT
+ * @brief Delay time after UDP sending failure
  */
 #define UDP_STREAMING_FAILURE_TIMEOUT 3000
  
+/**
+ * @def HTTP_REQUEST_WAITING_TIMEOUT
+ * @brief Timeout of waiting for HTTP request signal from socket interrupt
+ */
 #define HTTP_REQUEST_WAITING_TIMEOUT 5
  
+/**
+ * @def HTTP_DATA_WAITING_TIMEOUT
+ * @brief Timeout of waiting for HTTP data after request
+ */
 #define HTTP_DATA_WAITING_TIMEOUT 1000
  
+/**
+ * @def ETHERNET_NOT_CONNECTED_DELAY
+ * @brief Delay time of waiting if ethernet cable is not connected
+ */
 #define ETHERNET_NOT_CONNECTED_DELAY 100
 
 /* Functions */

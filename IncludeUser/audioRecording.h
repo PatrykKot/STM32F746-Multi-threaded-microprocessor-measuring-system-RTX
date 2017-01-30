@@ -27,11 +27,15 @@
  */
 #define AUDIO_RECORDER_INPUT_LINE ((uint16_t)0x0300)
 
+/**
+ * @def AUDIO_RECORDER_DEFAULT_FREQUENCY
+ * @brief Default audio sapling frequency
+ */
 #define AUDIO_RECORDER_DEFAULT_FREQUENCY 44100
 
 /**
  * @def AUDIO_RECORDER_OK
- * @brief No errors
+ * @brief No errors flag
  */
 #define AUDIO_RECORDER_OK AUDIO_OK
 
@@ -40,7 +44,6 @@
  * @brief Audio buffer size
  */
 #define AUDIO_BUFFER_SIZE 64
-
 
 /**
  * @def AUDIO_RECORDER_VOLUME_0DB
@@ -53,7 +56,6 @@
  * @brief The name of full buffer filled callback (function).
  */
 #define audioRecorder_FullBufferFilled BSP_AUDIO_IN_TransferComplete_CallBack
-
 
 /**
  * @def SOUND_MAIL_MAX_BUFFER_SIZE
@@ -70,12 +72,15 @@ typedef struct {
 	uint32_t frequency;
 } SoundMailStr;
 
-
 /**
  * @def MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE
  * @brief Audio buffeer size in \ref SoundBufferStr structure
  */
 #define MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE 4096
+
+/**
+ * @brief Sound buffer structure
+ */
 typedef struct {
 	uint16_t soundBuffer[MAIN_SOUND_BUFFER_MAX_BUFFER_SIZE];
 	uint32_t size;
@@ -84,16 +89,11 @@ typedef struct {
 } SoundBufferStr;
 
 /* Functions */
-uint8_t audioRecorderInit(uint16_t inputDevice, uint8_t volume,
-		uint32_t audioFreq);
-uint8_t audioRecorderStartRecording(uint16_t* audioBuffer,
-		uint32_t audioBufferSize);
+uint8_t audioRecorderInit(uint16_t inputDevice, uint8_t volume, uint32_t audioFreq);
+uint8_t audioRecorderStartRecording(uint16_t* audioBuffer, uint32_t audioBufferSize);
 uint8_t audioRecorderSetVolume(uint8_t volume);
 uint8_t audioRecorderSetSamplingFrequency(uint32_t frequency);
-
-void audioRecordingUpdateSoundBuffer(SoundBufferStr* soundBuffer,
-		SoundMailStr* soundMail);
-void audioRecordingSoundMailFill(SoundMailStr* soundStructure,
-		uint16_t* audioBuffer, uint32_t audioBufferSize, uint32_t frequency);
+void audioRecordingUpdateSoundBuffer(SoundBufferStr* soundBuffer, SoundMailStr* soundMail);
+void audioRecordingSoundMailFill(SoundMailStr* soundStructure, uint16_t* audioBuffer, uint32_t audioBufferSize, uint32_t frequency);
 
 #endif /* AUDIORECORDING_H_ */
