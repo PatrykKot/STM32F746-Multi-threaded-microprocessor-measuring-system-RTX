@@ -105,12 +105,11 @@ void initTask(void const * argument) {
 	uint32_t i;
 	
 	lcdInit();
-	logMsg("Init task");
 	
 	logMsg("Ethernet initialization...");
 	ethInit();
 
-	/* DHCP initialization */
+	/* Ethernet initialization */
 	ethernetTaskHandle = osThreadCreate(osThread(ethernetTask), NULL);
 
 	logMsg("Running ethernet thread");
@@ -221,10 +220,6 @@ void ethernetTask(void const * argument) {
 	while (1)
 		net_main();
 		osThreadYield();
-}
-
-void BSP_AUDIO_IN_Error_CallBack(void) {
-	logMsg("Audio error callback");
 }
 
 /**
@@ -383,22 +378,6 @@ void soundProcessingTask(void const * argument) {
 		logErrVal("ST sp wait", event.status);
 	}
 }
-
-#ifdef LCD_PRINTER_SUPPORT
-void lcdTask(void const * argument) {
-	while (1) {
-		osDelay(LCD_TASK_DELAY_TIME);
-		osStatus status = osMutexWait(mainSpectrumBufferMutex_id, osWaitForever);
-		if (status == osOK) {
-			lcdAmpPrinterPrint(&mainSpectrumBuffer);
-			status = osMutexRelease(mainSpectrumBufferMutex_id);
-			if (status != osOK) {
-				logErrVal("lcdFrequencyMutex release", status);
-			}
-		}
-	}
-}
-#endif
 
 /**
  * @brief Spectrum UDP streaming
